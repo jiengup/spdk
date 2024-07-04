@@ -710,6 +710,7 @@ ftl_process_io_queue(struct spdk_ftl_dev *dev)
 		io = TAILQ_FIRST(&dev->wr_sq);
 		TAILQ_REMOVE(&dev->wr_sq, io, queue_entry);
 		assert(io->type == FTL_IO_WRITE);
+		FTL_NOTICELOG(dev, "writing %lu blocks at LBA %lu.\n", io->num_blocks, io->lba);
 		if (!ftl_nv_cache_write(io)) {
 			TAILQ_INSERT_HEAD(&dev->wr_sq, io, queue_entry);
 			break;

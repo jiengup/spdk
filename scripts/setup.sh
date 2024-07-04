@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
-#  SPDX-License-Identifier: BSD-3-Clause
-#  Copyright (C) 2016 Intel Corporation
-#  All rights reserved.
-#
+
 set -e
-shopt -s nullglob extglob
 
 os=$(uname -s)
 
@@ -18,9 +14,9 @@ source "$rootdir/scripts/common.sh"
 
 function usage() {
 	if [[ $os == Linux ]]; then
-		options="[config|reset|status|cleanup|interactive|help]"
+		options="[config|reset|status|cleanup|help]"
 	else
-		options="[config|reset|interactive|help]"
+		options="[config|reset|help]"
 	fi
 
 	[[ -n $2 ]] && (
@@ -44,7 +40,6 @@ function usage() {
 	if [[ $os == Linux ]]; then
 		echo "status            Print status of all SPDK-compatible devices on the system."
 	fi
-	echo "interactive       Executes script in interactive mode."
 	echo "help              Print this help message."
 	echo
 	echo "The following environment variables can be specified."
@@ -62,9 +57,6 @@ function usage() {
 	echo "                  2048 pages for node0, 512 for node1 and default NRHUGE for node2."
 	echo "HUGEPGSZ          Size of the hugepages to use in kB. If not set, kernel's default"
 	echo "                  setting is used."
-	echo "SHRINK_HUGE       If set to 'yes', hugepages allocation won't be skipped in case"
-	echo "                  number of requested hugepages is lower from what's already"
-	echo "                  allocated. Doesn't apply when HUGE_EVEN_ALLOC is in use."
 	echo "CLEAR_HUGE        If set to 'yes', the attempt to remove hugepages from all nodes will"
 	echo "                  be made prior to allocation".
 	echo "PCI_ALLOWED"
@@ -86,13 +78,6 @@ function usage() {
 	echo "PCI_BLOCK_SYNC_ON_RESET"
 	echo "                  If set in the environment, the attempt to wait for block devices associated"
 	echo "                  with given PCI device will be made upon reset"
-	echo "UNBIND_ENTIRE_IOMMU_GROUP"
-	echo "                  If set, all devices from nvme's iommu group will be unbound from their drivers."
-	echo "                  Use with caution."
-	echo "DEV_TYPE"
-	echo "                  Perform action only against selected type of devices. Supported:"
-	echo "                    IOAT|DSA|IAA|VIRTIO|VMD|NVME."
-	echo "                  Default is to select all types."
 	exit 0
 }
 
@@ -109,10 +94,10 @@ function check_for_driver() {
 		return 1
 	fi
 
-	if [[ -d /sys/module/${1} ||
-		-d /sys/module/${1//-/_} ||
-		-d /sys/bus/pci/drivers/${1} ||
-		-d /sys/bus/pci/drivers/${1//-/_} ]]; then
+	if [[ -d /sys/module/${1} || -d \
+		/sys/module/${1//-/_} || -d \
+		/sys/bus/pci/drivers/${1} || -d \
+		/sys/bus/pci/drivers/${1//-/_} ]]; then
 		return 2
 	fi
 	return 0
@@ -138,10 +123,11 @@ function pci_dev_echo() {
 	echo "$bdf (${pci_ids_vendor["$bdf"]#0x} ${pci_ids_device["$bdf"]#0x}): $*"
 }
 
-function probe_driver() {
-	local bdf=$1
-	local driver_name=$2
-	old_driver_name=${pci_bus_driver["$bdf"]:-no driver}
+function linux_bind_driver() {
+	bdf="$1"
+	driver_name="$2"
+	old_driver_name=${drivers_d["$bdf"]:-no driver}
+	ven_dev_id="${pci_ids_vendor["$bdf"]#0x} ${pci_ids_device["$bdf"]#0x}"
 
 	if [[ $driver_name == "$old_driver_name" ]]; then
 		pci_dev_echo "$bdf" "Already using the $old_driver_name driver"
@@ -149,6 +135,7 @@ function probe_driver() {
 	fi
 
 	if [[ $old_driver_name != "no driver" ]]; then
+		echo "$ven_dev_id" > "/sys/bus/pci/devices/$bdf/driver/remove_id" 2> /dev/null || true
 		echo "$bdf" > "/sys/bus/pci/devices/$bdf/driver/unbind"
 	fi
 
@@ -158,60 +145,34 @@ function probe_driver() {
 		return 0
 	fi
 
-	local probe_attempts=0
-	echo "$driver_name" > "/sys/bus/pci/devices/$bdf/driver_override"
-	while ! echo "$bdf" > "/sys/bus/pci/drivers_probe" && ((probe_attempts++ < 10)); do
-		pci_dev_echo "$bdf" "failed to bind to $driver_name, retrying ($probe_attempts)"
-		sleep 0.5
-	done 2> /dev/null
+	echo "$ven_dev_id" > "/sys/bus/pci/drivers/$driver_name/new_id" 2> /dev/null || true
+	echo "$bdf" > "/sys/bus/pci/drivers/$driver_name/bind" 2> /dev/null || true
 
-	echo "" > "/sys/bus/pci/devices/$bdf/driver_override"
-
-	if [[ ! -e /sys/bus/pci/drivers/$driver_name/$bdf ]]; then
-		pci_dev_echo "$bdf" "failed to bind to $driver_name, aborting"
-		return 1
+	if [[ $driver_name == uio_pci_generic ]] && ! check_for_driver igb_uio; then
+		# Check if the uio_pci_generic driver is broken as it might be in
+		# some 4.18.x kernels (see centos8 for instance) - if our device
+		# didn't get a proper uio entry, fallback to igb_uio
+		if [[ ! -e /sys/bus/pci/devices/$bdf/uio ]]; then
+			pci_dev_echo "$bdf" "uio_pci_generic potentially broken, moving to igb_uio"
+			drivers_d["$bdf"]="no driver"
+			# This call will override $driver_name for remaining devices as well
+			linux_bind_driver "$bdf" igb_uio
+		fi
 	fi
-}
 
-function linux_bind_driver() {
-	local bdf="$1"
-	local driver_name="$2"
-
-	probe_driver "$bdf" "$driver_name"
-
-	local iommu_group=${pci_iommu_groups["$bdf"]}
+	iommu_group=$(basename $(readlink -f /sys/bus/pci/devices/$bdf/iommu_group))
 	if [ -e "/dev/vfio/$iommu_group" ]; then
 		if [ -n "$TARGET_USER" ]; then
 			chown "$TARGET_USER" "/dev/vfio/$iommu_group"
 		fi
 	fi
-
-	local iommug=("${!iommu_groups[iommu_group]}")
-	local _bdf _driver
-	if ((${#iommug[@]} > 1)) && [[ $driver_name == vfio* ]]; then
-		pci_dev_echo "$bdf" "WARNING: detected multiple devices (${#iommug[@]}) under the same IOMMU group!"
-		for _bdf in "${iommug[@]}"; do
-			[[ $_bdf == "$bdf" ]] && continue
-			_driver=$(readlink -f "/sys/bus/pci/devices/$_bdf/driver") && _driver=${_driver##*/}
-			if [[ $_driver == "$driver_name" ]]; then
-				continue
-			fi
-			# See what DPDK considers to be a "viable" iommu group: dpdk/lib/eal/linux/eal_vfio.c -> rte_vfio_setup_device()
-			pci_dev_echo "$bdf" "WARNING: ${_bdf##*/} not bound to $driver_name (${_driver:-no driver})"
-			pci_dev_echo "$bdf" "WARNING All devices in the IOMMU group must be bound to the same driver or unbound"
-			if [[ $UNBIND_ENTIRE_IOMMU_GROUP == yes ]]; then
-				pci_dev_echo "$bdf" "WARNING: Attempting to unbind ${_bdf##*/}"
-				pci_bus_driver["${_bdf##*/}"]=$_driver
-				probe_driver "${_bdf##*/}" none
-			fi
-		done
-	fi
-
 }
 
 function linux_unbind_driver() {
 	local bdf="$1"
-	local old_driver_name=${pci_bus_driver["$bdf"]:-no driver}
+	local ven_dev_id
+	ven_dev_id="${pci_ids_vendor["$bdf"]#0x} ${pci_ids_device["$bdf"]#0x}"
+	local old_driver_name=${drivers_d["$bdf"]:-no driver}
 
 	if [[ $old_driver_name == "no driver" ]]; then
 		pci_dev_echo "$bdf" "Not bound to any driver"
@@ -219,8 +180,8 @@ function linux_unbind_driver() {
 	fi
 
 	if [[ -e /sys/bus/pci/drivers/$old_driver_name ]]; then
+		echo "$ven_dev_id" > "/sys/bus/pci/drivers/$old_driver_name/remove_id" 2> /dev/null || true
 		echo "$bdf" > "/sys/bus/pci/drivers/$old_driver_name/unbind"
-		echo "" > "/sys/bus/pci/devices/$bdf/driver_override"
 	fi
 
 	pci_dev_echo "$bdf" "$old_driver_name -> no driver"
@@ -232,32 +193,12 @@ function linux_hugetlbfs_mounts() {
 
 function get_block_dev_from_bdf() {
 	local bdf=$1
-	local block blocks=() ctrl sub
+	local block
 
-	for block in /sys/block/!(nvme*); do
+	for block in /sys/block/*; do
 		if [[ $(readlink -f "$block/device") == *"/$bdf/"* ]]; then
-			blocks+=("${block##*/}")
+			echo "${block##*/}"
 		fi
-	done
-
-	blocks+=($(get_block_dev_from_nvme "$bdf"))
-
-	printf '%s\n' "${blocks[@]}"
-}
-
-function get_block_dev_from_nvme() {
-	local bdf=$1 block ctrl sub
-
-	for ctrl in /sys/class/nvme/nvme*; do
-		[[ -e $ctrl/address && $(< "$ctrl/address") == "$bdf" ]] || continue
-		sub=$(< "$ctrl/subsysnqn") && break
-	done
-
-	[[ -n $sub ]] || return 0
-
-	for block in /sys/block/nvme*; do
-		[[ -e $block/hidden && $(< "$block/hidden") == 1 ]] && continue
-		[[ $(< "$block/device/subsysnqn") == "$sub" ]] && echo "${block##*/}"
 	done
 }
 
@@ -266,7 +207,7 @@ function get_used_bdf_block_devs() {
 	local blocks block blockp dev mount holder
 	local used
 
-	hash lsblk &> /dev/null || return 1
+	hash lsblk || return 1
 	blocks=($(get_block_dev_from_bdf "$bdf"))
 
 	for block in "${blocks[@]}"; do
@@ -300,64 +241,62 @@ function get_used_bdf_block_devs() {
 }
 
 function collect_devices() {
-	local mode=$1 in_use
+	# NVMe, IOAT, DSA, IAA, VIRTIO, VMD
 
-	map_supported_devices "$DEV_TYPE"
+	local ids dev_type dev_id bdf bdfs in_use driver
 
-	for bdf in "${!all_devices_d[@]}"; do
-		in_use=0
-		if [[ $mode != status ]]; then
-			if ! pci_can_use "$bdf"; then
-				pci_dev_echo "$bdf" "Skipping denied controller at $bdf"
-				in_use=1
+	ids+="PCI_DEVICE_ID_INTEL_IOAT"
+	ids+="|PCI_DEVICE_ID_INTEL_DSA"
+	ids+="|PCI_DEVICE_ID_INTEL_IAA"
+	ids+="|PCI_DEVICE_ID_VIRTIO"
+	ids+="|PCI_DEVICE_ID_INTEL_VMD"
+	ids+="|SPDK_PCI_CLASS_NVME"
+
+	local -gA nvme_d ioat_d dsa_d iaa_d virtio_d vmd_d all_devices_d drivers_d
+
+	while read -r _ dev_type dev_id; do
+		bdfs=(${pci_bus_cache["0x8086:$dev_id"]})
+		[[ $dev_type == *NVME* ]] && bdfs=(${pci_bus_cache["$dev_id"]})
+		[[ $dev_type == *VIRT* ]] && bdfs=(${pci_bus_cache["0x1af4:$dev_id"]})
+		[[ $dev_type =~ (NVME|IOAT|DSA|IAA|VIRTIO|VMD) ]] && dev_type=${BASH_REMATCH[1],,}
+		for bdf in "${bdfs[@]}"; do
+			in_use=0
+			if [[ $1 != status ]]; then
+				if ! pci_can_use "$bdf"; then
+					pci_dev_echo "$bdf" "Skipping denied controller at $bdf"
+					in_use=1
+				fi
+				if [[ $dev_type == nvme || $dev_type == virtio ]]; then
+					if ! verify_bdf_block_devs "$bdf"; then
+						in_use=1
+					fi
+				fi
+				if [[ $dev_type == vmd ]]; then
+					if [[ $PCI_ALLOWED != *"$bdf"* ]]; then
+						pci_dev_echo "$bdf" "Skipping not allowed VMD controller at $bdf"
+						in_use=1
+					elif [[ " ${drivers_d[*]} " =~ "nvme" ]]; then
+						if [[ "${DRIVER_OVERRIDE}" != "none" ]]; then
+							if [ "$mode" == "config" ]; then
+								cat <<- MESSAGE
+									Binding new driver to VMD device. If there are NVMe SSDs behind the VMD endpoint
+									which are attached to the kernel NVMe driver,the binding process may go faster
+									if you first run this script with DRIVER_OVERRIDE="none" to unbind only the
+									NVMe SSDs, and then run again to unbind the VMD devices."
+								MESSAGE
+							fi
+						fi
+					fi
+				fi
 			fi
-		fi
-		if [[ -n ${nvme_d["$bdf"]} || -n ${virtio_d["$bdf"]} ]]; then
-			if ! verify_bdf_block_devs "$bdf"; then
-				in_use=1
+			eval "${dev_type}_d[$bdf]=$in_use"
+			all_devices_d["$bdf"]=$in_use
+			if [[ -e /sys/bus/pci/devices/$bdf/driver ]]; then
+				driver=$(readlink -f "/sys/bus/pci/devices/$bdf/driver")
+				drivers_d["$bdf"]=${driver##*/}
 			fi
-		fi
-		if [[ -n ${vmd_d["$bdf"]} ]]; then
-			if [[ $PCI_ALLOWED != *"$bdf"* ]]; then
-				pci_dev_echo "$bdf" "Skipping not allowed VMD controller at $bdf"
-				in_use=1
-			elif ((vmd_nvme_count["$bdf"] > 0)) && [[ $DRIVER_OVERRLDE != none && $mode == config ]]; then
-				cat <<- MESSAGE
-					Binding new driver to VMD device with NVMe SSDs attached to the kernel:
-					  ${!vmd_nvme_d["$bdf"]}
-					The binding process may go faster if you first run this script with
-					DRIVER_OVERRIDE="none" to unbind only the NVMe SSDs, and then run
-					again to unbind the VMD devices.
-				MESSAGE
-			fi
-		fi
-		if [[ -n ${dsa_d["$bdf"]} ]] && [[ $PCI_ALLOWED != *"$bdf"* ]]; then
-			pci_dev_echo "$bdf" "Skipping not allowed DSA controller at $bdf"
-			in_use=1
-		fi
-		if [[ -n ${iaa_d["$bdf"]} ]] && [[ $PCI_ALLOWED != *"$bdf"* ]]; then
-			pci_dev_echo "$bdf" "Skipping not allowed IAA controller at $bdf"
-			in_use=1
-		fi
-		# Update in-use for each bdf. Default from the map_supported_devices() is 0 == "not used"
-		local -n type_ref=${all_devices_type_d["$bdf"]}_d
-		type_ref["$bdf"]=$in_use
-		all_devices_d["$bdf"]=$in_use
-	done
-
-	# Check if we got any nvmes attached to VMDs sharing the same iommu_group - if there are
-	# any skip them since they won't be usable by SPDK without moving the entire VMD ctrl
-	# away from the kernel first. That said, allow to touch the nvmes in case user requested
-	# all devices to be unbound from any driver or if dedicated override flag was set.
-	[[ -z $ALLOW_NVME_BEHIND_VMD && $DRIVER_OVERRIDE != none ]] || return 0
-
-	for bdf in "${!nvme_d[@]}"; do
-		is_nvme_iommu_shared_with_vmd "$bdf" || continue
-		nvme_d["$bdf"]=1 all_devices_d["$bdf"]=1
-		pci_dev_echo "$bdf" "Skipping nvme behind VMD (${nvme_vmd_d["$bdf"]})"
-	done
-
-	return 0
+		done
+	done < <(grep -E "$ids" "$rootdir/include/spdk/pci_ids.h")
 }
 
 function collect_driver() {
@@ -372,8 +311,8 @@ function collect_driver() {
 	else
 		[[ -n ${nvme_d["$bdf"]} ]] && driver=nvme
 		[[ -n ${ioat_d["$bdf"]} ]] && driver=ioatdma
-		[[ -n ${dsa_d["$bdf"]} ]] && driver=idxd
-		[[ -n ${iaa_d["$bdf"]} ]] && driver=idxd
+		[[ -n ${dsa_d["$bdf"]} ]] && driver=dsa
+		[[ -n ${iaa_d["$bdf"]} ]] && driver=iaa
 		[[ -n ${virtio_d["$bdf"]} ]] && driver=virtio-pci
 		[[ -n ${vmd_d["$bdf"]} ]] && driver=vmd
 	fi 2> /dev/null
@@ -416,7 +355,9 @@ function configure_linux_pci() {
 		if [[ "$driver_path" = "$driver_name" ]]; then
 			driver_path=""
 		fi
-	elif is_iommu_enabled; then
+	elif [[ -n "$(ls /sys/kernel/iommu_groups)" || (-e \
+	/sys/module/vfio/parameters/enable_unsafe_noiommu_mode && \
+	"$(cat /sys/module/vfio/parameters/enable_unsafe_noiommu_mode)" == "Y") ]]; then
 		driver_name=vfio-pci
 		# Just in case, attempt to load VFIO_IOMMU_TYPE1 module into the kernel - this
 		# should be done automatically by modprobe since this particular module should
@@ -465,36 +406,43 @@ function configure_linux_pci() {
 }
 
 function cleanup_linux() {
-	local dirs_to_clean=() files_to_clean=() opened_files=() file_locks=()
-	local match_spdk="spdk_tgt|iscsi|vhost|nvmf|rocksdb|bdevio|bdevperf|vhost_fuzz|nvme_fuzz|accel_perf|bdev_svc"
-
-	dirs_to_clean=({/var/run,/tmp}/dpdk/spdk{,_pid}+([0-9]))
-	if [[ -d $XDG_RUNTIME_DIR ]]; then
-		dirs_to_clean+=("$XDG_RUNTIME_DIR/dpdk/spdk"{,_pid}+([0-9]))
+	shopt -s extglob nullglob
+	dirs_to_clean=""
+	dirs_to_clean="$(echo {/var/run,/tmp}/dpdk/spdk{,_pid}+([0-9])) "
+	if [[ -d $XDG_RUNTIME_DIR && $XDG_RUNTIME_DIR != *" "* ]]; then
+		dirs_to_clean+="$(readlink -e assert_not_empty $XDG_RUNTIME_DIR/dpdk/spdk{,_pid}+([0-9]) || true) "
 	fi
 
-	for dir in "${dirs_to_clean[@]}"; do
-		files_to_clean+=("$dir/"*)
+	files_to_clean="" file_locks=()
+	for dir in $dirs_to_clean; do
+		files_to_clean+="$(echo $dir/*) "
 	done
 	file_locks+=(/var/tmp/spdk_pci_lock*)
-	file_locks+=(/var/tmp/spdk_cpu_lock*)
+	shopt -u extglob nullglob
 
-	files_to_clean+=(/dev/shm/@(@($match_spdk)_trace|spdk_iscsi_conns)*)
-	files_to_clean+=("${file_locks[@]}")
+	files_to_clean+="$(ls -1 /dev/shm/* \
+		| grep -E '(spdk_tgt|iscsi|vhost|nvmf|rocksdb|bdevio|bdevperf|vhost_fuzz|nvme_fuzz|accel_perf|bdev_svc)_trace|spdk_iscsi_conns' || true) "
+	files_to_clean+=" ${file_locks[*]}"
+	files_to_clean="$(readlink -e assert_not_empty $files_to_clean || true)"
+	if [[ -z "$files_to_clean" ]]; then
+		echo "Clean"
+		return 0
+	fi
 
-	# This may fail in case path that readlink attempts to resolve suddenly
-	# disappears (as it may happen with terminating processes).
-	opened_files+=($(readlink -f /proc/+([0-9])/fd/+([0-9]))) || true
+	shopt -s extglob
+	for fd_dir in $(echo /proc/+([0-9])); do
+		opened_files+="$(readlink -e assert_not_empty $fd_dir/fd/* || true)"
+	done
+	shopt -u extglob
 
-	if ((${#opened_files[@]} == 0)); then
+	if [[ -z "$opened_files" ]]; then
 		echo "Can't get list of opened files!"
 		exit 1
 	fi
 
 	echo 'Cleaning'
-	for f in "${files_to_clean[@]}"; do
-		[[ -e $f ]] || continue
-		if [[ ${opened_files[*]} != *"$f"* ]]; then
+	for f in $files_to_clean; do
+		if ! echo "$opened_files" | grep -E -q "^$f\$"; then
 			echo "Removing:    $f"
 			rm $f
 		else
@@ -502,9 +450,8 @@ function cleanup_linux() {
 		fi
 	done
 
-	for dir in "${dirs_to_clean[@]}"; do
-		[[ -d $dir ]] || continue
-		if [[ ${opened_files[*]} != *"$dir"* ]]; then
+	for dir in $dirs_to_clean; do
+		if ! echo "$opened_files" | grep -E -q "^$dir\$"; then
 			echo "Removing:    $dir"
 			rmdir $dir
 		else
@@ -512,18 +459,13 @@ function cleanup_linux() {
 		fi
 	done
 	echo "Clean"
+
+	unset dirs_to_clean files_to_clean opened_files
 }
 
 check_hugepages_alloc() {
 	local hp_int=$1
 	local allocated_hugepages
-
-	allocated_hugepages=$(< "$hp_int")
-
-	if ((NRHUGE <= allocated_hugepages)) && [[ $SHRINK_HUGE != yes ]]; then
-		echo "INFO: Requested $NRHUGE hugepages but $allocated_hugepages already allocated ${2:+on node$2}"
-		return 0
-	fi
 
 	echo $((NRHUGE < 0 ? 0 : NRHUGE)) > "$hp_int"
 
@@ -672,6 +614,7 @@ function status_linux() {
 	printf "%-6s %10s %8s / %6s\n" "node" "hugesize" "free" "total" >&2
 
 	numa_nodes=0
+	shopt -s nullglob
 	for path in /sys/devices/system/node/node*/hugepages/hugepages-*/; do
 		numa_nodes=$((numa_nodes + 1))
 		free_pages=$(cat $path/free_hugepages)
@@ -684,6 +627,7 @@ function status_linux() {
 
 		printf "%-6s %10s %8s / %6s\n" $node $huge_size $free_pages $all_pages
 	done
+	shopt -u nullglob
 
 	# fall back to system-wide hugepages
 	if [ "$numa_nodes" = "0" ]; then
@@ -695,13 +639,13 @@ function status_linux() {
 		printf "%-6s %10s %8s / %6s\n" $node $huge_size $free_pages $all_pages
 	fi
 
-	printf '\n%-25s %-15s %-6s %-6s %-7s %-16s %-10s %s\n' \
+	printf '\n%-8s %-15s %-6s %-6s %-7s %-16s %-10s %s\n' \
 		"Type" "BDF" "Vendor" "Device" "NUMA" "Driver" "Device" "Block devices" >&2
 
 	sorted_bdfs=($(printf '%s\n' "${!all_devices_d[@]}" | sort))
 
 	for bdf in "${sorted_bdfs[@]}"; do
-		driver=${pci_bus_driver["$bdf"]}
+		driver=${drivers_d["$bdf"]}
 		if [ "$numa_nodes" = "0" ]; then
 			node="-"
 		else
@@ -723,14 +667,14 @@ function status_linux() {
 		fi
 
 		desc=""
-		desc=${desc:-${nvme_d["$bdf"]:+NVMe${nvme_vmd_d["$bdf"]:+@${nvme_vmd_d["$bdf"]}(VMD)}}}
+		desc=${desc:-${nvme_d["$bdf"]:+NVMe}}
 		desc=${desc:-${ioat_d["$bdf"]:+I/OAT}}
 		desc=${desc:-${dsa_d["$bdf"]:+DSA}}
 		desc=${desc:-${iaa_d["$bdf"]:+IAA}}
 		desc=${desc:-${virtio_d["$bdf"]:+virtio}}
 		desc=${desc:-${vmd_d["$bdf"]:+VMD}}
 
-		printf '%-25s %-15s %-6s %-6s %-7s %-16s %-10s %s\n' \
+		printf '%-8s %-15s %-6s %-6s %-7s %-16s %-10s %s\n' \
 			"$desc" "$bdf" "${pci_ids_vendor["$bdf"]#0x}" "${pci_ids_device["$bdf"]#0x}" \
 			"$node" "${driver:--}" "${name:-}" "${blknames[*]:--}"
 	done
@@ -835,19 +779,6 @@ function reset_freebsd() {
 	kldunload nic_uio.ko || true
 }
 
-function set_hp() {
-	if [[ -n $HUGEPGSZ && ! -e /sys/kernel/mm/hugepages/hugepages-${HUGEPGSZ}kB ]]; then
-		echo "${HUGEPGSZ}kB is not supported by the running kernel, ignoring" >&2
-		unset -v HUGEPGSZ
-	fi
-
-	HUGEPGSZ=${HUGEPGSZ:-$(grep Hugepagesize /proc/meminfo | cut -d : -f 2 | tr -dc '0-9')}
-	HUGEPGSZ_MB=$((HUGEPGSZ / 1024))
-	NRHUGE=${NRHUGE:-$(((HUGEMEM + HUGEPGSZ_MB - 1) / HUGEPGSZ_MB))}
-}
-
-kmsg "spdk: $0 $* (start)"
-
 CMD=reset cache_pci_bus
 
 mode=$1
@@ -877,15 +808,6 @@ fi
 
 collect_devices "$mode"
 
-if [[ $os == Linux ]]; then
-	set_hp
-fi
-
-if [[ $mode == interactive ]]; then
-	source "$rootdir/scripts/common/setup/interactive.sh"
-	main_menu "$2" || exit 0
-fi
-
 if [[ $mode == reset && $PCI_BLOCK_SYNC_ON_RESET == yes ]]; then
 	# Note that this will wait only for the first block device attached to
 	# a given storage controller. For nvme this may miss some of the devs
@@ -897,7 +819,7 @@ if [[ $mode == reset && $PCI_BLOCK_SYNC_ON_RESET == yes ]]; then
 	for bdf in "${!all_devices_d[@]}"; do
 		((all_devices_d["$bdf"] == 0)) || continue
 		if [[ -n ${nvme_d["$bdf"]} || -n ${virtio_d["$bdf"]} ]]; then
-			[[ $(collect_driver "$bdf") != "${pci_bus_driver["$bdf"]}" ]] || continue
+			[[ $(collect_driver "$bdf") != "${drivers_d["$bdf"]}" ]] || continue
 			bdfs_to_wait_for+=("$bdf")
 		fi
 	done
@@ -912,6 +834,15 @@ if [[ $mode == reset && $PCI_BLOCK_SYNC_ON_RESET == yes ]]; then
 fi
 
 if [[ $os == Linux ]]; then
+	if [[ -n $HUGEPGSZ && ! -e /sys/kernel/mm/hugepages/hugepages-${HUGEPGSZ}kB ]]; then
+		echo "${HUGEPGSZ}kB is not supported by the running kernel, ignoring" >&2
+		unset -v HUGEPGSZ
+	fi
+
+	HUGEPGSZ=${HUGEPGSZ:-$(grep Hugepagesize /proc/meminfo | cut -d : -f 2 | tr -dc '0-9')}
+	HUGEPGSZ_MB=$((HUGEPGSZ / 1024))
+	: ${NRHUGE=$(((HUGEMEM + HUGEPGSZ_MB - 1) / HUGEPGSZ_MB))}
+
 	if [ "$mode" == "config" ]; then
 		configure_linux
 	elif [ "$mode" == "cleanup" ]; then
@@ -945,5 +876,3 @@ fi
 if [[ -e /proc/$sync_pid/status ]]; then
 	wait "$sync_pid"
 fi
-
-kmsg "spdk: $0 $* (done)"
