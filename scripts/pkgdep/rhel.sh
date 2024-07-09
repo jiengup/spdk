@@ -153,7 +153,7 @@ fi
 pip3 install pyyaml
 
 # Additional dependencies for SPDK CLI - not available in rhel and centos
-if ! echo "$ID $VERSION_ID" | grep -E -q 'rhel 7|centos 7'; then
+if ! echo "$ID $VERSION_ID" | grep -E -q 'rhel 7|centos 7|tlinux 2.6'; then
 	yum install -y python3-configshell python3-pexpect
 fi
 # Additional dependencies for ISA-L used in compression

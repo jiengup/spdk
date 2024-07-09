@@ -379,10 +379,13 @@ ftl_mngt_fast_persist_md(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt
 void
 ftl_mngt_init_default_sb(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
 {
+
 	struct ftl_superblock *sb = dev->sb;
 
 	sb->header.magic = FTL_SUPERBLOCK_MAGIC;
 	sb->header.version = FTL_SB_VERSION_CURRENT;
+	sb->header.timestamp = 0;
+	FTL_NOTICELOG(dev, "Initial timestamp: %"PRIu64"\n", sb->header.timestamp);
 	sb->uuid = dev->conf.uuid;
 	sb->clean = 0;
 	dev->sb_shm->shm_clean = false;
@@ -390,6 +393,8 @@ ftl_mngt_init_default_sb(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt
 
 	/* Max 16 IO depth per band relocate */
 	sb->max_reloc_qdepth = 16;
+
+	/* Increase the intial global timestamp from 0 */
 
 	sb->overprovisioning = dev->conf.overprovisioning;
 
@@ -639,6 +644,8 @@ shm_retry:
 	if (dev->conf.mode & SPDK_FTL_MODE_CREATE) {
 		ftl_mngt_call_process(mngt, &desc_init_sb, NULL);
 	} else {
+		FTL_ERRLOG(dev, "Now we cant support shutdown-restart cause not persist the metadata.");
+		ftl_abort();
 		ftl_mngt_call_process(mngt, &desc_restore_sb, NULL);
 	}
 }

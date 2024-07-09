@@ -255,6 +255,7 @@ ftl_recover_max_seq(struct spdk_ftl_dev *dev)
 	max = spdk_max(max, chunk_close_seq_id);
 
 	dev->sb->seq_id = max;
+	FTL_NOTICELOG(dev, "Initialize dev super block seq_id to %" PRIu64 "\n", dev->sb->seq_id);
 }
 
 static int

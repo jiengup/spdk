@@ -61,6 +61,9 @@ struct ftl_superblock {
 	/* FTL layout params */
 	struct ftl_superblock_v5_md_blob_hdr	layout_params;
 
+	/* FTL global timestamp */
+	uint64_t timestamp;
+
 	/* Start of the blob area */
 	char blob_area[0];
 } __attribute__((packed));

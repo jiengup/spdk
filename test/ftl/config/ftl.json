@@ -12,16 +12,34 @@
       ]
     },
     {
-      "subsystem": "accel",
-      "config": []
-    },
-    {
       "subsystem": "vmd",
       "config": []
     },
     {
       "subsystem": "sock",
       "config": [
+        {
+          "method": "sock_set_default_impl",
+          "params": {
+            "impl_name": "posix"
+          }
+        },
+        {
+          "method": "sock_impl_set_options",
+          "params": {
+            "impl_name": "ssl",
+            "recv_buf_size": 4096,
+            "send_buf_size": 4096,
+            "enable_recv_pipe": true,
+            "enable_quickack": false,
+            "enable_placement_id": 0,
+            "enable_zerocopy_send_server": true,
+            "enable_zerocopy_send_client": false,
+            "zerocopy_threshold": 0,
+            "tls_version": 0,
+            "enable_ktls": false
+          }
+        },
         {
           "method": "sock_impl_set_options",
           "params": {
@@ -37,21 +55,38 @@
             "tls_version": 0,
             "enable_ktls": false
           }
-        },
+        }
+      ]
+    },
+    {
+      "subsystem": "iobuf",
+      "config": [
         {
-          "method": "sock_impl_set_options",
+          "method": "iobuf_set_options",
           "params": {
-            "impl_name": "ssl",
-            "recv_buf_size": 2097152,
-            "send_buf_size": 2097152,
-            "enable_recv_pipe": true,
-            "enable_quickack": false,
-            "enable_placement_id": 0,
-            "enable_zerocopy_send_server": true,
-            "enable_zerocopy_send_client": false,
-            "zerocopy_threshold": 0,
-            "tls_version": 0,
-            "enable_ktls": false
+            "small_pool_count": 8192,
+            "large_pool_count": 1024,
+            "small_bufsize": 8192,
+            "large_bufsize": 135168
+          }
+        }
+      ]
+    },
+    {
+      "subsystem": "keyring",
+      "config": []
+    },
+    {
+      "subsystem": "accel",
+      "config": [
+        {
+          "method": "accel_set_options",
+          "params": {
+            "small_cache_size": 128,
+            "large_cache_size": 16,
+            "task_count": 2048,
+            "sequence_count": 2048,
+            "buf_count": 2048
           }
         }
       ]
@@ -64,7 +99,9 @@
           "params": {
             "bdev_io_pool_size": 65535,
             "bdev_io_cache_size": 256,
-            "bdev_auto_examine": true
+            "bdev_auto_examine": true,
+            "iobuf_small_cache_size": 128,
+            "iobuf_large_cache_size": 16
           }
         },
         {
@@ -72,7 +109,13 @@
           "params": {
             "base_bdev": "Nvme0n1",
             "split_count": 1,
-            "split_size_mb": 10240
+            "split_size_mb": 5120
+          }
+        },
+        {
+          "method": "bdev_raid_set_options",
+          "params": {
+            "process_window_size_kb": 1024
           }
         },
         {
@@ -82,7 +125,6 @@
             "timeout_us": 0,
             "timeout_admin_us": 0,
             "keep_alive_timeout_ms": 10000,
-            "transport_retry_count": 4,
             "arbitration_burst": 0,
             "low_priority_weight": 0,
             "medium_priority_weight": 0,
@@ -91,11 +133,34 @@
             "nvme_ioq_poll_period_us": 0,
             "io_queue_requests": 1024,
             "delay_cmd_submit": true,
+            "transport_retry_count": 4,
             "bdev_retry_count": 3,
             "transport_ack_timeout": 0,
             "ctrlr_loss_timeout_sec": 0,
             "reconnect_delay_sec": 0,
-            "fast_io_fail_timeout_sec": 0
+            "fast_io_fail_timeout_sec": 0,
+            "disable_auto_failback": false,
+            "generate_uuids": false,
+            "transport_tos": 0,
+            "nvme_error_stat": false,
+            "rdma_srq_size": 0,
+            "io_path_stat": false,
+            "allow_accel_sequence": false,
+            "rdma_max_cq_size": 0,
+            "rdma_cm_event_timeout_ms": 0,
+            "dhchap_digests": [
+              "sha256",
+              "sha384",
+              "sha512"
+            ],
+            "dhchap_dhgroups": [
+              "null",
+              "ffdhe2048",
+              "ffdhe3072",
+              "ffdhe4096",
+              "ffdhe6144",
+              "ffdhe8192"
+            ]
           }
         },
         {
@@ -103,12 +168,15 @@
           "params": {
             "name": "Nvme0",
             "trtype": "PCIe",
-            "traddr": "10001:84:00.0",
+            "traddr": "10000:01:00.0",
             "prchk_reftag": false,
             "prchk_guard": false,
             "ctrlr_loss_timeout_sec": 0,
             "reconnect_delay_sec": 0,
-            "fast_io_fail_timeout_sec": 0
+            "fast_io_fail_timeout_sec": 0,
+            "hostnqn": "nqn.2014-08.org.nvmexpress:uuid:3488a4ba-a1bf-48db-b0eb-b1ae5d678f36",
+            "hdgst": false,
+            "ddgst": false
           }
         },
         {
@@ -116,12 +184,15 @@
           "params": {
             "name": "Nvme1",
             "trtype": "PCIe",
-            "traddr": "10002:83:00.0",
+            "traddr": "10000:02:00.0",
             "prchk_reftag": false,
             "prchk_guard": false,
             "ctrlr_loss_timeout_sec": 0,
             "reconnect_delay_sec": 0,
-            "fast_io_fail_timeout_sec": 0
+            "fast_io_fail_timeout_sec": 0,
+            "hostnqn": "nqn.2014-08.org.nvmexpress:uuid:3488a4ba-a1bf-48db-b0eb-b1ae5d678f36",
+            "hdgst": false,
+            "ddgst": false
           }
         },
         {

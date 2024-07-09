@@ -11,5 +11,6 @@
 #include "utils/ftl_conf.h"
 #include "utils/ftl_md.h"
 #include "utils/ftl_property.h"
+#include "utils/ftl_log.h"
 
 #endif /* FTL_FTL_UTILS_H */

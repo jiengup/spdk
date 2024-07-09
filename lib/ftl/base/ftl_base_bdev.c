@@ -7,6 +7,7 @@
 #include "ftl_layout.h"
 #include "ftl_band.h"
 #include "utils/ftl_layout_tracker_bdev.h"
+#include "utils/ftl_log.h"
 
 static bool
 is_bdev_compatible(struct spdk_ftl_dev *dev, struct spdk_bdev *bdev)

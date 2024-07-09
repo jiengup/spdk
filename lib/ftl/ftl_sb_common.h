@@ -41,8 +41,9 @@ struct ftl_superblock_header {
 	uint64_t magic;
 	uint64_t crc;
 	uint64_t version;
+	uint64_t timestamp;
 } __attribute__((packed));
-SPDK_STATIC_ASSERT(sizeof(struct ftl_superblock_header) == 24,
+SPDK_STATIC_ASSERT(sizeof(struct ftl_superblock_header) == 32,
 		   "ftl_superblock_header incorrect size");
 
 struct ftl_superblock_v3_md_region {

@@ -136,6 +136,7 @@ union ftl_md_vss {
 	struct {
 		uint64_t	lba;
 		uint64_t	seq_id;
+		uint64_t    timestamp;
 	} nv_cache;
 };
 

@@ -300,6 +300,12 @@ ftl_get_next_seq_id(struct spdk_ftl_dev *dev)
 	return ++dev->sb->seq_id;
 }
 
+static inline uint64_t
+ftl_get_next_timestamp(struct spdk_ftl_dev *dev)
+{
+	return ++dev->sb->header.timestamp;
+}
+
 static inline size_t
 ftl_p2l_map_num_blocks(const struct spdk_ftl_dev *dev)
 {

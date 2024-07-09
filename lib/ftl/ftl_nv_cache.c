@@ -15,6 +15,8 @@
 #include "ftl_core.h"
 #include "ftl_band.h"
 #include "utils/ftl_addr_utils.h"
+#include "utils/ftl_log.h"
+#include "utils/ftl_md.h"
 #include "mngt/ftl_mngt.h"
 
 static inline uint64_t nvc_data_blocks(struct ftl_nv_cache *nv_cache) __attribute__((unused));
@@ -91,6 +93,7 @@ ftl_nv_cache_init_update_limits(struct spdk_ftl_dev *dev)
 	nvc->chunk_compaction_threshold = usable_chunks *
 					  dev->conf.nv_cache.chunk_compaction_threshold /
 					  100;
+	FTL_NOTICELOG(dev, "Chunk compaction threshold: %lu\n", nvc->chunk_compaction_threshold);
 
 	nvc->throttle.interval_tsc = FTL_NV_CACHE_THROTTLE_INTERVAL_MS *
 				     (spdk_get_ticks_hz() / 1000);
@@ -241,7 +244,9 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	 * Initialize chunk info
 	 */
 	nv_cache->chunk_blocks = dev->layout.nvc.chunk_data_blocks;
+	FTL_NOTICELOG(dev, "NV cache chunk blocks %lu\n", nv_cache->chunk_blocks);
 	nv_cache->chunk_count = dev->layout.nvc.chunk_count;
+	FTL_NOTICELOG(dev, "NV cache chunk count %lu\n", nv_cache->chunk_count);
 	nv_cache->tail_md_chunk_blocks = ftl_nv_cache_chunk_tail_md_num_blocks(nv_cache);
 
 	/* Allocate chunks */
@@ -287,6 +292,9 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	}
 	assert(nv_cache->chunk_free_count + nv_cache->chunk_inactive_count == nv_cache->chunk_count);
 	assert(offset <= nvc_data_offset(nv_cache) + nvc_data_blocks(nv_cache));
+
+	uint64_t usable_chunks = nv_cache->chunk_count - nv_cache->chunk_inactive_count;
+	FTL_NOTICELOG(dev, "NV cache usable(data) chunks %lu\n", usable_chunks);
 
 	TAILQ_INIT(&nv_cache->compactor_list);
 	for (i = 0; i < FTL_NV_CACHE_NUM_COMPACTORS; i++) {
@@ -415,6 +423,7 @@ ftl_nv_cache_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_io *io)
 
 			/* Set chunk in IO */
 			io->nv_cache_chunk = chunk;
+			io->chunk_offset = chunk->md->write_pointer;
 
 			/* Move write pointer */
 			chunk->md->write_pointer += num_blocks;
@@ -443,6 +452,7 @@ ftl_nv_cache_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_io *io)
 void
 ftl_nv_cache_fill_md(struct ftl_io *io)
 {
+	struct spdk_ftl_dev *dev = io->dev;
 	struct ftl_nv_cache_chunk *chunk = io->nv_cache_chunk;
 	uint64_t i;
 	union ftl_md_vss *metadata = io->md;
@@ -451,6 +461,7 @@ ftl_nv_cache_fill_md(struct ftl_io *io)
 	for (i = 0; i < io->num_blocks; ++i, lba++, metadata++) {
 		metadata->nv_cache.lba = lba;
 		metadata->nv_cache.seq_id = chunk->md->seq_id;
+		metadata->nv_cache.timestamp = ftl_get_next_timestamp(dev);
 	}
 }
 
@@ -1182,8 +1193,14 @@ static void
 ftl_nv_cache_submit_cb(struct spdk_bdev_io *bdev_io, bool success, void *cb_arg)
 {
 	struct ftl_io *io = cb_arg;
+	union ftl_md_vss *md = io->md;
 
 	ftl_stats_bdev_io_completed(io->dev, FTL_STATS_TYPE_USER, bdev_io);
+
+	SPDK_NOTICELOG("[SUCCESS] Finnaly LBA %"PRIu64" writing to NV cache addres [timestamp/seq_id/offset] 
+				   %"PRIu64"/%"PRIu64"/%"PRIu64", written blocks %"PRIu64"\n", 
+				   io->lba, md->nv_cache.timestamp, io->nv_cache_chunk->md->seq_id, 
+				   io->chunk_offset, io->num_blocks);
 
 	spdk_bdev_free_io(bdev_io);
 
@@ -1210,6 +1227,7 @@ nv_cache_write(void *_io)
 					     ftl_addr_to_nvc_offset(dev, io->addr), io->num_blocks,
 					     ftl_nv_cache_submit_cb, io);
 	if (spdk_unlikely(rc)) {
+		SPDK_NOTICELOG("[FAILED] Finnaly LBA %"PRIu64" writing to NV cache addres %"PRIu64", written blocks %"PRIu64"\n", io->lba, io->addr, io->num_blocks);
 		if (rc == -ENOMEM) {
 			struct spdk_bdev *bdev = spdk_bdev_desc_get_bdev(nv_cache->bdev_desc);
 			io->bdev_io_wait.bdev = bdev;

@@ -67,6 +67,7 @@ struct ftl_io {
 
 	/* First address of write when sent to cache device */
 	ftl_addr			addr;
+	ftl_addr 			chunk_offset;
 
 	/* Number of processed blocks */
 	size_t				pos;
