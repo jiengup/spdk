@@ -137,6 +137,8 @@ union ftl_md_vss {
 		uint64_t	lba;
 		uint64_t	seq_id;
 		uint64_t    timestamp;
+		/* Is this block issue by compaction? */
+		// bool 		compaction;
 	} nv_cache;
 };
 

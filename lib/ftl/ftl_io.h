@@ -146,6 +146,8 @@ struct ftl_rq_entry {
 	 */
 	ftl_addr addr;
 
+	ftl_addr new_addr;
+
 	/* Logical block address */
 	uint64_t lba;
 
@@ -170,6 +172,7 @@ struct ftl_rq_entry {
 	struct {
 		uint64_t offset_blocks;
 		uint64_t num_blocks;
+		uint64_t lba;
 		struct spdk_bdev_io_wait_entry wait_entry;
 	} bdev_io;
 };
@@ -196,6 +199,9 @@ struct ftl_rq {
 
 	/* Payload for IO */
 	void *io_payload;
+
+	/* Compaction rewrite valid data to which new chunk */
+	struct ftl_nv_cache_chunk *rewriten_chunk;
 
 	/* Request result status */
 	bool success;

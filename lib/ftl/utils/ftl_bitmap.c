@@ -8,6 +8,7 @@
 
 #include "ftl_bitmap.h"
 #include "ftl_internal.h"
+#include "utils/ftl_log.h"
 
 typedef unsigned long bitmap_word;
 
@@ -182,5 +183,29 @@ ftl_bitmap_count_set(struct ftl_bitmap *bitmap)
 		count += __builtin_popcountl(*word);
 	}
 
+	return count;
+}
+
+uint64_t
+ftl_bitmap_count_set_range(struct ftl_bitmap *bitmap, uint64_t start_bit,
+				uint64_t end_bit)
+{
+	uint64_t count = 0;
+	bitmap_word *word;
+	size_t i, end;
+
+	assert(start_bit <= end_bit);
+
+	i = start_bit >> FTL_BITMAP_WORD_SHIFT;
+	assert(i < bitmap->size);
+
+	word = bitmap->buf+i;
+	count += *word & (~0UL << (start_bit & FTL_BITMAP_WORD_MASK));
+
+	end = spdk_min((end_bit >> FTL_BITMAP_WORD_SHIFT) + 1, bitmap->size);
+	for (i= i + 1; i < end; i++, word++) {
+		// SPDK_NOTICELOG("PRIu32\n", word);
+		count += __builtin_popcountl(*word);
+	}
 	return count;
 }

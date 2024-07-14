@@ -389,10 +389,9 @@ chunk_is_closed(struct ftl_nv_cache_chunk *chunk)
 static void ftl_chunk_close(struct ftl_nv_cache_chunk *chunk);
 
 static uint64_t
-ftl_nv_cache_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_io *io)
+ftl_nv_cache_get_wr_buffer(struct ftl_nv_cache *nv_cache, uint64_t num_blocks, struct ftl_io *io)
 {
 	uint64_t address = FTL_LBA_INVALID;
-	uint64_t num_blocks = io->num_blocks;
 	uint64_t free_space;
 	struct ftl_nv_cache_chunk *chunk;
 
@@ -422,9 +421,11 @@ ftl_nv_cache_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_io *io)
 			address = chunk->offset + chunk->md->write_pointer;
 
 			/* Set chunk in IO */
-			io->nv_cache_chunk = chunk;
-			io->chunk_offset = chunk->md->write_pointer;
-
+			if (spdk_unlikely(io != NULL))
+			{
+				io->nv_cache_chunk = chunk;
+				io->chunk_offset = chunk->md->write_pointer;
+			}
 			/* Move write pointer */
 			chunk->md->write_pointer += num_blocks;
 			break;
@@ -462,6 +463,7 @@ ftl_nv_cache_fill_md(struct ftl_io *io)
 		metadata->nv_cache.lba = lba;
 		metadata->nv_cache.seq_id = chunk->md->seq_id;
 		metadata->nv_cache.timestamp = ftl_get_next_timestamp(dev);
+		// metadata->nv_cache.compaction = false;
 	}
 }
 
@@ -701,6 +703,160 @@ is_compaction_required(struct ftl_nv_cache *nv_cache)
 
 static void compaction_process_finish_read(struct ftl_nv_cache_compactor *compactor);
 static void compaction_process_pin_lba(struct ftl_nv_cache_compactor *comp);
+static void compaction_process_rewrite(struct ftl_nv_cache_compactor *compactor);
+static void compaction_process_finish_rewrite(struct ftl_nv_cache_compactor *compactor);
+static void compactor_deactivate(struct ftl_nv_cache_compactor *compactor);
+static void compaction_process_pin_lba_rw(void *arg);
+static void compaction_process_invalidate_entry(struct ftl_rq_entry *entry);
+
+static void _compaction_process_rewrite(void *_comp)
+{
+	struct ftl_nv_cache_compactor *comp = _comp;
+	compaction_process_rewrite(comp);
+}
+
+static void
+compaction_process_rewrite_cb(struct spdk_bdev_io *bdev_io, bool success, void *cb_arg)
+{
+	struct ftl_rq *rq = cb_arg;
+	struct spdk_ftl_dev *dev = rq->dev;
+	struct ftl_nv_cache_compactor *compactor = rq->owner.priv;
+
+	ftl_stats_bdev_io_completed(dev, FTL_STATS_TYPE_CMP, bdev_io);
+
+	assert(rq->iter.remaining >= bdev_io->u.bdev.num_blocks);
+	rq->iter.remaining -= bdev_io->u.bdev.num_blocks;;
+	chunk_advance_blocks(rq->rewriten_chunk->nv_cache, rq->rewriten_chunk, bdev_io->u.bdev.num_blocks);
+
+	spdk_bdev_free_io(bdev_io);
+
+	if (!success) {
+		FTL_ERRLOG(dev, "Rewrite spdk write with md failed.\n");
+		spdk_thread_send_msg(spdk_get_thread(), _compaction_process_rewrite, compactor);
+		return;
+	}
+
+	if (0 == rq->iter.remaining) {
+		rq->entries[0].new_addr = ftl_addr_from_nvc_offset(dev, bdev_io->u.bdev.offset_blocks);
+		FTL_NOTICELOG(dev, "Rewriten %"PRIu32" blocks to chunk %"PRIu64"\n", rq->iter.count, rq->rewriten_chunk->md->seq_id);
+		compaction_process_finish_rewrite(compactor);
+	}
+}
+
+static void
+compaction_process_pin_lba_rw_cb(struct spdk_ftl_dev *dev, int status, struct ftl_l2p_pin_ctx *pin_ctx)
+{
+	struct ftl_nv_cache_compactor *comp = pin_ctx->cb_ctx;
+	struct ftl_rq *rq = comp->rq;
+
+	if (status) {
+		FTL_ERRLOG(dev, "Can not pin l2p page of LBA %"PRIu64" for compaction rewriting.\n", pin_ctx->lba);
+		rq->iter.status = status;
+		pin_ctx->lba = FTL_LBA_INVALID;
+	}
+
+	if (--rq->iter.remaining == 0) {
+		if (rq->iter.status) {
+			ftl_rq_unpin(rq);
+			FTL_ERRLOG(dev, "Can not pin l2p page for compaction rewriting, retring...\n");
+			spdk_thread_send_msg(spdk_get_thread(), compaction_process_pin_lba_rw, comp);
+			return;
+		}
+		compaction_process_rewrite(comp);
+	}
+}
+
+static void
+compaction_process_pin_lba_rw(void *arg)
+{
+	struct ftl_nv_cache_compactor *comp = arg;
+	struct ftl_rq *rq = comp->rq;
+	struct spdk_ftl_dev *dev = rq->dev;
+	struct ftl_rq_entry *entry;
+
+	assert(rq->iter.count);
+	rq->iter.remaining = rq->iter.count;
+	rq->iter.status = 0;
+
+	FTL_RQ_ENTRY_LOOP(rq, entry, rq->iter.count) {
+		// struct ftl_nv_cache_chunk *chunk = entry->owner.priv;
+		union ftl_md_vss *md = entry->io_md;
+		struct ftl_l2p_pin_ctx *pin_ctx = &entry->l2p_pin_ctx;
+		
+		// compaction after compaction will issue this assert
+		// assert(chunk->md->seq_id == md->nv_cache.seq_id);
+		assert(md->nv_cache.lba != FTL_LBA_INVALID);
+		assert(entry->lba == FTL_LBA_INVALID);
+
+		ftl_l2p_pin(dev, md->nv_cache.lba, 1, compaction_process_pin_lba_rw_cb, comp, pin_ctx);
+	}
+}
+
+static void
+compaction_process_finish_rewrite(struct ftl_nv_cache_compactor *compactor)
+{
+	struct ftl_rq *rq = compactor->rq;
+	struct spdk_ftl_dev *dev = rq->dev;
+	struct ftl_rq_entry *entry;
+	uint64_t current_addr;
+	uint64_t new_addr = rq->entries[0].new_addr;
+
+	FTL_RQ_ENTRY_LOOP(rq, entry, rq->iter.count) {
+		struct ftl_nv_cache_chunk *chunk = entry->owner.priv;
+		union ftl_md_vss *md = entry->io_md;
+		entry->new_addr = new_addr;
+		assert(md->nv_cache.lba != FTL_LBA_INVALID);
+		assert(entry->lba == FTL_LBA_INVALID);
+		entry->lba = md->nv_cache.lba;
+
+		current_addr = ftl_l2p_get(dev, entry->lba);
+		if (current_addr == entry->addr) {
+			/* L2P table: LBA not update by user */
+			ftl_l2p_update(dev, entry->lba, entry->new_addr, entry->addr, true);
+
+		} else {
+			/* just omit this rewrite. Do we need to invalid this new physical addr? */
+			/* yes we need! */
+			ftl_invalidate_addr(dev, entry->new_addr);
+		}
+		chunk_compaction_advance(chunk, 1);
+		ftl_l2p_unpin(dev, entry->lba, 1);
+		new_addr ++;
+		compaction_process_invalidate_entry(entry);
+	}
+	compactor_deactivate(compactor);
+}
+
+static void
+compaction_process_rewrite(struct ftl_nv_cache_compactor *compactor)
+{
+	struct ftl_rq *rq = compactor->rq;
+	struct spdk_ftl_dev *dev = rq->dev;
+	uint64_t cache_offset;
+
+	assert(rq->iter.count);
+	rq->iter.remaining = rq->iter.count;
+	rq->iter.status = 0;
+
+	cache_offset = ftl_nv_cache_get_wr_buffer(&dev->nv_cache, rq->iter.count, NULL);
+	rq->rewriten_chunk = dev->nv_cache.chunk_current;
+
+	if (cache_offset == FTL_ADDR_INVALID) {
+		FTL_ERRLOG(dev, "Can not get write pos on cache device.\n");
+		ftl_abort();
+	}
+
+	int rc = ftl_nv_cache_bdev_write_blocks_with_md(dev, dev->nv_cache.bdev_desc,
+													dev->nv_cache.cache_ioch, rq->io_payload, rq->io_md,
+													cache_offset, rq->iter.count,
+													compaction_process_rewrite_cb, rq);
+	if (spdk_unlikely(rc)) {
+		FTL_ERRLOG(dev, "Can't write down valid data at cache device %"PRIu64".\n", cache_offset);
+		ftl_abort();
+	}	
+
+	dev->stats.io_activity_total += rq->iter.count;
+}
 
 static void
 _compaction_process_pin_lba(void *_comp)
@@ -779,7 +935,11 @@ compaction_process_read_entry_cb(struct spdk_bdev_io *bdev_io, bool success, voi
 	rq->iter.remaining -= entry->bdev_io.num_blocks;
 	if (0 == rq->iter.remaining) {
 		/* All IOs processed, go to next phase - pining */
-		compaction_process_pin_lba(compactor);
+		// compaction_process_pin_lba(compactor);
+		/* All IOs processed, go to next phase - rewriting 
+		   We will not pin l2p page and will transfer to nvcache to check
+		 */
+		compaction_process_pin_lba_rw(compactor);
 	}
 }
 
@@ -826,6 +986,7 @@ static struct ftl_nv_cache_chunk *
 get_chunk_for_compaction(struct ftl_nv_cache *nv_cache)
 {
 	struct ftl_nv_cache_chunk *chunk = NULL;
+	struct spdk_ftl_dev *dev = SPDK_CONTAINEROF(nv_cache, struct spdk_ftl_dev, nv_cache);
 
 	if (!TAILQ_EMPTY(&nv_cache->chunk_comp_list)) {
 		chunk = TAILQ_FIRST(&nv_cache->chunk_comp_list);
@@ -837,8 +998,15 @@ get_chunk_for_compaction(struct ftl_nv_cache *nv_cache)
 	if (!TAILQ_EMPTY(&nv_cache->chunk_full_list)) {
 		chunk = TAILQ_FIRST(&nv_cache->chunk_full_list);
 		TAILQ_REMOVE(&nv_cache->chunk_full_list, chunk, entry);
-
 		assert(chunk->md->write_pointer);
+
+		/* If all the blocks are valid, we shoud not compaction this block */
+		uint64_t start = ftl_addr_from_nvc_offset(dev, chunk->offset);
+		uint64_t end = start + nv_cache->chunk_blocks;
+		if (ftl_bitmap_count_set_range(dev->valid_map, start, end) == chunk_tail_md_offset(chunk->nv_cache)-1) {
+			TAILQ_INSERT_TAIL(&nv_cache->chunk_full_list, chunk, entry);
+			return NULL;
+		}
 	} else {
 		return NULL;
 	}
@@ -979,6 +1147,7 @@ compaction_entry_read_pos(struct ftl_nv_cache *nv_cache, struct ftl_rq_entry *en
 
 	assert(FTL_ADDR_INVALID != addr);
 
+	assert(ftl_addr_in_nvc(dev, addr));
 	/* Set entry address info and chunk */
 	entry->addr = addr;
 	entry->owner.priv = chunk;
@@ -1112,6 +1281,7 @@ compaction_process_finish_read(struct ftl_nv_cache_compactor *compactor)
 		/*
 		 * Request contains data to be placed on FTL, compact it
 		 */
+		FTL_NOTICELOG(dev, "Now compactor have %"PRIu64" blocks to write.\n", rq->iter.count - skip);
 		ftl_writer_queue_rq(&dev->writer_user, rq);
 	} else {
 		compactor_deactivate(compactor);
@@ -1182,7 +1352,8 @@ ftl_nv_cache_l2p_update(struct ftl_io *io)
 	size_t i;
 
 	for (i = 0; i < io->num_blocks; ++i, ++next_addr) {
-		ftl_l2p_update_cache(dev, ftl_io_get_lba(io, i), next_addr, io->map[i]);
+		// ftl_l2p_update_cache(dev, ftl_io_get_lba(io, i), next_addr, io->map[i]);
+		ftl_l2p_update(dev, ftl_io_get_lba(io, i), next_addr, io->map[i], false);
 	}
 
 	ftl_l2p_unpin(dev, io->lba, io->num_blocks);
@@ -1197,9 +1368,9 @@ ftl_nv_cache_submit_cb(struct spdk_bdev_io *bdev_io, bool success, void *cb_arg)
 
 	ftl_stats_bdev_io_completed(io->dev, FTL_STATS_TYPE_USER, bdev_io);
 
-	SPDK_NOTICELOG("[SUCCESS] Finnaly LBA %"PRIu64" writing to NV cache addres [timestamp/seq_id/offset] 
-				   %"PRIu64"/%"PRIu64"/%"PRIu64", written blocks %"PRIu64"\n", 
-				   io->lba, md->nv_cache.timestamp, io->nv_cache_chunk->md->seq_id, 
+	SPDK_NOTICELOG("[SUCCESS] Finnaly LBA %"PRIu64" writing to NV cache addres [timestamp/seq_id/offset] \
+				   %"PRIu64"/%"PRIu64"/%"PRIu64", written blocks %"PRIu64"\n", \
+				   io->lba, md->nv_cache.timestamp, io->nv_cache_chunk->md->seq_id, \
 				   io->chunk_offset, io->num_blocks);
 
 	spdk_bdev_free_io(bdev_io);
@@ -1279,7 +1450,7 @@ ftl_nv_cache_write(struct ftl_io *io)
 	}
 
 	/* Reserve area on the write buffer cache */
-	cache_offset = ftl_nv_cache_get_wr_buffer(&dev->nv_cache, io);
+	cache_offset = ftl_nv_cache_get_wr_buffer(&dev->nv_cache, io->num_blocks, io);
 	if (cache_offset == FTL_LBA_INVALID) {
 		/* No free space in NV cache, resubmit request */
 		ftl_mempool_put(dev->nv_cache.md_pool, io->md);
@@ -1985,7 +2156,7 @@ ftl_chunk_close(struct ftl_nv_cache_chunk *chunk)
 	chunk->md->close_seq_id = ftl_get_next_seq_id(dev);
 	ftl_basic_rq_init(dev, brq, metadata, chunk->nv_cache->tail_md_chunk_blocks);
 	ftl_basic_rq_set_owner(brq, chunk_map_write_cb, chunk);
-
+	
 	assert(chunk->md->write_pointer == chunk_tail_md_offset(chunk->nv_cache));
 	brq->io.addr = chunk->offset + chunk->md->write_pointer;
 

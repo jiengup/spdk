@@ -8,6 +8,7 @@
 #include "ftl_nv_cache.h"
 #include "ftl_l2p_cache.h"
 #include "ftl_l2p_flat.h"
+#include "utils/ftl_log.h"
 
 
 /* TODO: Verify why function pointers had worse performance than compile time constants */
@@ -143,6 +144,33 @@ get_trim_seq_id(struct spdk_ftl_dev *dev, uint64_t lba)
 	uint64_t page_no = lba / dev->layout.l2p.lbas_in_page;
 
 	return page[page_no];
+}
+
+void
+ftl_l2p_update(struct spdk_ftl_dev *dev, uint64_t lba, ftl_addr new_addr, ftl_addr old_addr, bool is_compaction)
+{
+	ftl_addr current_addr;
+	assert(ftl_check_core_thread(dev));
+	assert(new_addr != FTL_ADDR_INVALID);
+	assert(ftl_addr_in_nvc(dev, new_addr));
+	
+
+	current_addr = ftl_l2p_get(dev, lba);
+	if (spdk_unlikely(is_compaction == false)) {
+		ftl_nv_cache_set_addr(dev, lba, new_addr);
+		ftl_l2p_set(dev, lba, new_addr);
+		if (current_addr != FTL_ADDR_INVALID) {
+			ftl_invalidate_addr(dev, current_addr);
+		}
+	} else {
+		if (current_addr == old_addr) {
+			ftl_nv_cache_set_addr(dev, lba, new_addr);
+			ftl_l2p_set(dev, lba, new_addr);
+		} else {
+			ftl_invalidate_addr(dev, new_addr);
+		}
+		ftl_invalidate_addr(dev, old_addr);
+	}
 }
 
 void

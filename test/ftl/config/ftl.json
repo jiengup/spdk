@@ -113,6 +113,14 @@
           }
         },
         {
+          "method": "bdev_split_create",
+          "params": {
+            "base_bdev": "Nvme1n1",
+            "split_count": 1,
+            "split_size_mb": 20480
+          }
+        },
+        {
           "method": "bdev_raid_set_options",
           "params": {
             "process_window_size_kb": 1024
@@ -209,7 +217,7 @@
             "overprovisioning": 20,
             "l2p_dram_limit": 2048,
             "fast_shutdown": false,
-            "base_bdev": "Nvme1n1",
+            "base_bdev": "Nvme1n1p0",
             "cache": "Nvme0n1p0"
           }
         },

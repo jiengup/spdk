@@ -53,6 +53,8 @@ void ftl_l2p_update_cache(struct spdk_ftl_dev *dev, uint64_t lba, ftl_addr new_a
 			  ftl_addr old_addr);
 void ftl_l2p_update_base(struct spdk_ftl_dev *dev, uint64_t lba, ftl_addr new_addr,
 			 ftl_addr old_addr);
+void ftl_l2p_update(struct spdk_ftl_dev *dev, uint64_t lba, ftl_addr new_addr,
+			  ftl_addr old_addr, bool is_compaction);
 
 void ftl_l2p_pin_complete(struct spdk_ftl_dev *dev, int status, struct ftl_l2p_pin_ctx *pin_ctx);
 
