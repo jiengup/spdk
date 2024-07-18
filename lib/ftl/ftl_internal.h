@@ -28,6 +28,8 @@
 
 #define FTL_P2L_VERSION_CURRENT FTL_P2L_VERSION_2
 
+#define FTL_SHOW_STAT_INTERVAL_MS 1000
+
 /*
  * This type represents address in the ftl address space. Values from 0 to based bdev size are
  * mapped directly to base device lbas. Values above that represent nv cache lbas.

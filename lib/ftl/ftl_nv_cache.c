@@ -93,7 +93,7 @@ ftl_nv_cache_init_update_limits(struct spdk_ftl_dev *dev)
 	nvc->chunk_compaction_threshold = usable_chunks *
 					  dev->conf.nv_cache.chunk_compaction_threshold /
 					  100;
-	FTL_NOTICELOG(dev, "Chunk compaction threshold: %lu\n", nvc->chunk_compaction_threshold);
+	FTL_NOTICELOG(dev, "Chunk compaction threshold: %"PRIu64"\n", nvc->chunk_compaction_threshold);
 
 	nvc->throttle.interval_tsc = FTL_NV_CACHE_THROTTLE_INTERVAL_MS *
 				     (spdk_get_ticks_hz() / 1000);
@@ -101,6 +101,7 @@ ftl_nv_cache_init_update_limits(struct spdk_ftl_dev *dev)
 	nvc->chunk_free_target = spdk_divide_round_up(usable_chunks *
 				 dev->conf.nv_cache.chunk_free_target,
 				 100);
+	FTL_NOTICELOG(dev, "Chunk free target: %"PRIu64"\n", nvc->chunk_free_target);
 }
 
 struct nvc_scrub_ctx {
@@ -244,10 +245,11 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	 * Initialize chunk info
 	 */
 	nv_cache->chunk_blocks = dev->layout.nvc.chunk_data_blocks;
-	FTL_NOTICELOG(dev, "NV cache chunk blocks %lu\n", nv_cache->chunk_blocks);
+	FTL_NOTICELOG(dev, "NV cache chunk blocks %"PRIu64"\n", nv_cache->chunk_blocks);
 	nv_cache->chunk_count = dev->layout.nvc.chunk_count;
-	FTL_NOTICELOG(dev, "NV cache chunk count %lu\n", nv_cache->chunk_count);
+	FTL_NOTICELOG(dev, "NV cache chunk count %"PRIu64"\n", nv_cache->chunk_count);
 	nv_cache->tail_md_chunk_blocks = ftl_nv_cache_chunk_tail_md_num_blocks(nv_cache);
+	FTL_NOTICELOG(dev, "NV cache tail md blocks: %"PRIu64"\n", nv_cache->tail_md_chunk_blocks);
 
 	/* Allocate chunks */
 	nv_cache->chunks = calloc(nv_cache->chunk_count,
@@ -463,7 +465,6 @@ ftl_nv_cache_fill_md(struct ftl_io *io)
 		metadata->nv_cache.lba = lba;
 		metadata->nv_cache.seq_id = chunk->md->seq_id;
 		metadata->nv_cache.timestamp = ftl_get_next_timestamp(dev);
-		// metadata->nv_cache.compaction = false;
 	}
 }
 

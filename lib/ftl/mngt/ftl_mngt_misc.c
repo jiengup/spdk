@@ -190,6 +190,9 @@ ftl_mngt_finalize_startup(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mng
 	 * the initialization code.
 	 */
 	memset(dev->stats.limits, 0, sizeof(dev->stats.limits));
+	dev->show_stat.interval_tsc = FTL_SHOW_STAT_INTERVAL_MS *
+				     			  (spdk_get_ticks_hz() / 1000);
+	dev->show_stat.start_tsc = 0;
 	dev->initialized = 1;
 	dev->sb_shm->shm_ready = true;
 

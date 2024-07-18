@@ -37,6 +37,8 @@ struct ftl_stats_error {
 struct ftl_stats_group {
 	uint64_t ios;
 	uint64_t blocks;
+	uint64_t interval_ios;
+	uint64_t interval_blocks;
 	struct ftl_stats_error errors;
 };
 

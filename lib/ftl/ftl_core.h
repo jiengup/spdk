@@ -202,6 +202,11 @@ struct spdk_ftl_dev {
 
 	/* FTL properties which can be configured by user */
 	struct ftl_properties			*properties;
+	
+	struct {
+		uint64_t interval_tsc;
+		uint64_t start_tsc;
+	} show_stat;
 };
 
 void ftl_apply_limits(struct spdk_ftl_dev *dev);

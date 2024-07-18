@@ -25,8 +25,7 @@ static const struct spdk_ftl_conf g_default_conf = {
 	/* IO pool size per user thread (this should be adjusted to thread IO qdepth) */
 	.user_io_pool_size = 2048,
 	.nv_cache = {
-		// .chunk_compaction_threshold = 80,
-		.chunk_compaction_threshold = 40,
+		.chunk_compaction_threshold = 80,
 		.chunk_free_target = 5,
 	},
 	.fast_shutdown = true,

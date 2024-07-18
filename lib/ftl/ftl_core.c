@@ -18,6 +18,7 @@
 #include "ftl_debug.h"
 #include "ftl_internal.h"
 #include "mngt/ftl_mngt.h"
+#include "utils/ftl_log.h"
 
 
 size_t
@@ -740,6 +741,76 @@ ftl_process_io_queue(struct spdk_ftl_dev *dev)
 	}
 }
 
+static void
+ftl_show_stat(struct spdk_ftl_dev *dev)
+{
+	uint64_t tsc = spdk_thread_get_last_tsc(spdk_get_thread());
+
+	if (spdk_unlikely(!dev->show_stat.start_tsc)) {
+		dev->show_stat.start_tsc = tsc;
+	} else if (tsc - dev->show_stat.start_tsc < dev->show_stat.interval_tsc) {
+		return;
+	}
+
+	// User read and write
+	uint64_t user_write_ios = dev->stats.entries[FTL_STATS_TYPE_USER].write.interval_ios;
+	uint64_t user_write_blocks = dev->stats.entries[FTL_STATS_TYPE_USER].write.interval_blocks;
+	uint64_t user_read_ios = dev->stats.entries[FTL_STATS_TYPE_USER].read.interval_ios;
+	uint64_t user_read_blocks = dev->stats.entries[FTL_STATS_TYPE_USER].read.interval_blocks;
+	FTL_NOTICELOG(dev, "[STAT_USER] read: IOPS %"PRIu64", blocks %"PRIu64", write: IOPS %"PRIu64", blocks %"PRIu64"\n",
+		      user_read_ios, user_read_blocks, user_write_ios, user_write_blocks);
+
+	// Compaction read and write
+	uint64_t cmp_write_ios = dev->stats.entries[FTL_STATS_TYPE_CMP].write.interval_ios;
+	uint64_t cmp_write_blocks = dev->stats.entries[FTL_STATS_TYPE_CMP].write.interval_blocks;
+	uint64_t cmp_read_ios = dev->stats.entries[FTL_STATS_TYPE_CMP].read.interval_ios;
+	uint64_t cmp_read_blocks = dev->stats.entries[FTL_STATS_TYPE_CMP].read.interval_blocks;
+	FTL_NOTICELOG(dev, "[STAT_COMPACTION] read: IOPS %"PRIu64", blocks %"PRIu64", write: IOPS %"PRIu64", blocks %"PRIu64"\n",
+		      cmp_read_ios, cmp_read_blocks, cmp_write_ios, cmp_write_blocks);
+
+	// GC read and write
+	// uint64_t gc_write_ios = dev->stats.entries[FTL_STATS_TYPE_GC].write.interval_ios;
+	uint64_t gc_write_blocks = dev->stats.entries[FTL_STATS_TYPE_GC].write.interval_blocks;
+	// uint64_t gc_read_ios = dev->stats.entries[FTL_STATS_TYPE_GC].read.interval_ios;
+	uint64_t gc_read_blocks = dev->stats.entries[FTL_STATS_TYPE_GC].read.interval_blocks;
+	assert(gc_write_blocks == 0 && gc_read_blocks == 0);
+
+	// Base md read and write
+	uint64_t base_md_write_ios = dev->stats.entries[FTL_STATS_TYPE_MD_BASE].write.interval_ios;
+	uint64_t base_md_write_blocks = dev->stats.entries[FTL_STATS_TYPE_MD_BASE].write.interval_blocks;
+	uint64_t base_md_read_ios = dev->stats.entries[FTL_STATS_TYPE_MD_BASE].read.interval_ios;
+	uint64_t base_md_read_blocks = dev->stats.entries[FTL_STATS_TYPE_MD_BASE].read.interval_blocks;
+	FTL_NOTICELOG(dev, "[STAT_BASE_MD] read: IOPS %"PRIu64", blocks %"PRIu64", write: IOPS %"PRIu64", blocks %"PRIu64"\n",
+		      base_md_read_ios, base_md_read_blocks, base_md_write_ios, base_md_write_blocks);
+
+	// NVC md read and write
+	uint64_t nvc_md_write_ios = dev->stats.entries[FTL_STATS_TYPE_MD_NV_CACHE].write.interval_ios;
+	uint64_t nvc_md_write_blocks = dev->stats.entries[FTL_STATS_TYPE_MD_NV_CACHE].write.interval_blocks;
+	uint64_t nvc_md_read_ios = dev->stats.entries[FTL_STATS_TYPE_MD_NV_CACHE].read.interval_ios;
+	uint64_t nvc_md_read_blocks = dev->stats.entries[FTL_STATS_TYPE_MD_NV_CACHE].read.interval_blocks;
+	FTL_NOTICELOG(dev, "[STAT_NVC_MD] read: IOPS %"PRIu64", blocks %"PRIu64", write: IOPS %"PRIu64", blocks %"PRIu64"\n",
+		      nvc_md_read_ios, nvc_md_read_blocks, nvc_md_write_ios, nvc_md_write_blocks);
+
+	// L2P read and write
+	uint64_t l2p_write_ios = dev->stats.entries[FTL_STATS_TYPE_L2P].write.interval_ios;
+	uint64_t l2p_write_blocks = dev->stats.entries[FTL_STATS_TYPE_L2P].write.interval_blocks;
+	uint64_t l2p_read_ios = dev->stats.entries[FTL_STATS_TYPE_L2P].read.interval_ios;
+	uint64_t l2p_read_blocks = dev->stats.entries[FTL_STATS_TYPE_L2P].read.interval_blocks;
+	FTL_NOTICELOG(dev, "[STAT_L2P] read: IOPS %"PRIu64", blocks %"PRIu64", write: IOPS %"PRIu64", blocks %"PRIu64"\n",
+		      l2p_read_ios, l2p_read_blocks, l2p_write_ios, l2p_write_blocks);
+
+	uint64_t total_write_blocks = user_write_blocks + cmp_write_blocks + nvc_md_write_blocks;
+	FTL_NOTICELOG(dev, "[STAT_WAF] %.4lf\n", (double)total_write_blocks / user_write_blocks);
+
+	for (size_t i = 0; i < FTL_STATS_TYPE_MAX; i++) {
+		dev->stats.entries[i].read.interval_ios = 0;
+		dev->stats.entries[i].read.interval_blocks = 0;
+		dev->stats.entries[i].write.interval_ios = 0;
+		dev->stats.entries[i].write.interval_blocks = 0;
+	}
+	dev->show_stat.start_tsc = tsc;
+}
+
 int
 ftl_core_poller(void *ctx)
 {
@@ -757,6 +828,7 @@ ftl_core_poller(void *ctx)
 	ftl_reloc(dev->reloc);
 	ftl_nv_cache_process(dev);
 	ftl_l2p_process(dev);
+	ftl_show_stat(dev);
 
 	if (io_activity_total_old != dev->stats.io_activity_total) {
 		return SPDK_POLLER_BUSY;
@@ -842,6 +914,8 @@ ftl_stats_bdev_io_completed(struct spdk_ftl_dev *dev, enum ftl_stats_type type,
 	if (sct == SPDK_NVME_SCT_GENERIC && sc == SPDK_NVME_SC_SUCCESS) {
 		stats_group->ios++;
 		stats_group->blocks += bdev_io->u.bdev.num_blocks;
+		stats_group->interval_ios++;
+		stats_group->interval_blocks += bdev_io->u.bdev.num_blocks;
 	} else if (sct == SPDK_NVME_SCT_MEDIA_ERROR) {
 		stats_group->errors.media++;
 	} else {
