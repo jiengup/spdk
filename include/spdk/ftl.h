@@ -112,6 +112,7 @@ struct spdk_ftl_conf {
 
 		/* Percentage of chunks to maintain free */
 		uint32_t			chunk_free_target;
+		char				*type_name;
 	} nv_cache;
 
 	/*
@@ -129,7 +130,7 @@ struct spdk_ftl_conf {
 	bool					verbose_mode;
 
 	/* Hole at bytes 0x66 - 0x67. */
-	uint8_t					reserved[2];
+	// uint8_t					reserved[2];
 
 	/* Name of base block device (zoned or non-zoned) */
 	char					*base_bdev;
@@ -141,7 +142,8 @@ struct spdk_ftl_conf {
 	bool					fast_shutdown;
 
 	/* Hole at bytes 0x79 - 0x7f. */
-	uint8_t					reserved2[7];
+	// uint8_t					reserved2[7];
+	uint8_t					reserved2[1];
 
 	/*
 	 * The size of spdk_ftl_conf according to the caller of this library is used for ABI

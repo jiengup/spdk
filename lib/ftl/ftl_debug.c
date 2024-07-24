@@ -6,6 +6,7 @@
 #include "spdk/ftl.h"
 #include "ftl_debug.h"
 #include "ftl_band.h"
+#include "ftl_core.h"
 
 /* TODO: Switch to INFOLOG instead, we can control the printing via spdk_log_get_flag */
 #if defined(DEBUG)
@@ -200,10 +201,11 @@ ftl_dev_dump_stats(const struct spdk_ftl_dev *dev)
 		total += dev->bands[i].p2l_map.num_valid;
 	}
 
-	write_user = dev->stats.entries[FTL_STATS_TYPE_CMP].write.blocks;
-	write_total = write_user +
-		      dev->stats.entries[FTL_STATS_TYPE_GC].write.blocks +
-		      dev->stats.entries[FTL_STATS_TYPE_MD_BASE].write.blocks;
+	write_user = dev->stats.entries[FTL_STATS_TYPE_USER].write.blocks;
+	// write_total = write_user +
+	// 	      dev->stats.entries[FTL_STATS_TYPE_CMP].write.blocks +
+	// 	      dev->stats.entries[FTL_STATS_TYPE_MD_NV_CACHE].write.blocks;
+	write_total = write_user + dev->stats.entries[FTL_STATS_TYPE_CMP].write.blocks;
 
 	waf = (double)write_total / (double)write_user;
 

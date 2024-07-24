@@ -5,8 +5,10 @@
 #include "spdk/stdinc.h"
 #include "spdk/queue.h"
 #include "spdk/log.h"
+#include "spdk/string.h"
 
 #include "ftl_nvc_dev.h"
+#include "ftl_core.h"
 #include "utils/ftl_defs.h"
 
 static TAILQ_HEAD(, ftl_nv_cache_device_type) g_devs = TAILQ_HEAD_INITIALIZER(g_devs);
@@ -27,9 +29,40 @@ ftl_nv_cache_device_type_get_type(const char *name)
 }
 
 static bool
+config_select_type(const struct spdk_ftl_dev *dev, const struct ftl_nv_cache_device_type *type)
+{
+	return !strcmp(dev->conf.nv_cache.type_name, type->name);
+}
+
+static bool
 ftl_nv_cache_device_valid(const struct ftl_nv_cache_device_type *type)
 {
-	return type && type->name && strlen(type->name) > 0;
+	if (!type) {
+		return false;
+	}
+	if (!type->ops.is_bdev_compatible) {
+		return false;
+	}
+	if (!type->ops.is_chunk_active) {
+		return false;
+	}
+	if (!type->ops.md_layout_ops.region_create) {
+		return false;
+	}
+	if (!type->ops.md_layout_ops.region_open) {
+		return false;
+	}
+	if (!type->name || strlen(type->name) <= 0) {
+		return false;
+	}
+	if (!type->ops.get_user_io_tag) {
+		return false;
+	}
+	if (!type->ops.get_group_tag_for_compaction) {
+		return false;
+	}
+	return true;
+	// return type && type->name && strlen(type->name) > 0;
 }
 
 void
@@ -59,13 +92,18 @@ ftl_nv_cache_device_get_type_by_bdev(struct spdk_ftl_dev *dev, struct spdk_bdev 
 	const struct ftl_nv_cache_device_type *type = NULL;
 
 	pthread_mutex_lock(&g_devs_mutex);
+	uint32_t cnt = 0;
 	TAILQ_FOREACH(entry, &g_devs, internal.entry) {
 		if (entry->ops.is_bdev_compatible) {
-			if (entry->ops.is_bdev_compatible(dev, bdev)) {
+			if (entry->ops.is_bdev_compatible(dev, bdev) && config_select_type(dev, entry)) {
 				type = entry;
-				break;
+				cnt ++;
 			}
 		}
+	}
+	if (cnt > 1) {
+		SPDK_ERRLOG("Found multiple nv cache device type registed!\n");
+		type = NULL;
 	}
 	pthread_mutex_unlock(&g_devs_mutex);
 

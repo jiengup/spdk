@@ -64,6 +64,9 @@ struct ftl_io {
 
 	/* LBA address */
 	uint64_t			lba;
+	
+	/* User io tag using for grouping */
+	uint32_t			tag;
 
 	/* First address of write when sent to cache device */
 	ftl_addr			addr;
@@ -202,6 +205,8 @@ struct ftl_rq {
 
 	/* Compaction rewrite valid data to which new chunk */
 	struct ftl_nv_cache_chunk *rewriten_chunk;
+
+	uint32_t tag;
 
 	/* Request result status */
 	bool success;

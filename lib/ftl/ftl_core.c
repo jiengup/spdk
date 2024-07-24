@@ -68,9 +68,10 @@ ftl_get_limit(const struct spdk_ftl_dev *dev, int type)
 static bool
 ftl_shutdown_complete(struct spdk_ftl_dev *dev)
 {
-	uint64_t i;
+	// uint64_t i;
 
 	if (dev->num_inflight) {
+		FTL_NOTICELOG(dev, "dev still have inflight!\n");
 		return false;
 	}
 
@@ -79,33 +80,35 @@ ftl_shutdown_complete(struct spdk_ftl_dev *dev)
 		return false;
 	}
 
-	if (!ftl_writer_is_halted(&dev->writer_user)) {
-		ftl_writer_halt(&dev->writer_user);
-		return false;
-	}
+	// if (!ftl_writer_is_halted(&dev->writer_user)) {
+	// 	ftl_writer_halt(&dev->writer_user);
+	// 	return false;
+	// }
 
-	if (!ftl_reloc_is_halted(dev->reloc)) {
-		ftl_reloc_halt(dev->reloc);
-		return false;
-	}
+	// if (!ftl_reloc_is_halted(dev->reloc)) {
+	// 	ftl_reloc_halt(dev->reloc);
+	// 	return false;
+	// }
 
-	if (!ftl_writer_is_halted(&dev->writer_gc)) {
-		ftl_writer_halt(&dev->writer_gc);
-		return false;
-	}
+	// if (!ftl_writer_is_halted(&dev->writer_gc)) {
+	// 	ftl_writer_halt(&dev->writer_gc);
+	// 	return false;
+	// }
 
 	if (!ftl_nv_cache_chunks_busy(&dev->nv_cache)) {
+		FTL_NOTICELOG(dev, "nv cache is busy\n");
 		return false;
 	}
 
-	for (i = 0; i < ftl_get_num_bands(dev); ++i) {
-		if (dev->bands[i].queue_depth ||
-		    dev->bands[i].md->state == FTL_BAND_STATE_CLOSING) {
-			return false;
-		}
-	}
+	// for (i = 0; i < ftl_get_num_bands(dev); ++i) {
+	// 	if (dev->bands[i].queue_depth ||
+	// 	    dev->bands[i].md->state == FTL_BAND_STATE_CLOSING) {
+	// 		return false;
+	// 	}
+	// }
 
 	if (!ftl_l2p_is_halted(dev)) {
+		FTL_NOTICELOG(dev, "l2p cant halt\n");
 		ftl_l2p_halt(dev);
 		return false;
 	}
@@ -741,7 +744,7 @@ ftl_process_io_queue(struct spdk_ftl_dev *dev)
 	}
 }
 
-static void
+void
 ftl_show_stat(struct spdk_ftl_dev *dev)
 {
 	uint64_t tsc = spdk_thread_get_last_tsc(spdk_get_thread());
@@ -799,8 +802,19 @@ ftl_show_stat(struct spdk_ftl_dev *dev)
 	FTL_NOTICELOG(dev, "[STAT_L2P] read: IOPS %"PRIu64", blocks %"PRIu64", write: IOPS %"PRIu64", blocks %"PRIu64"\n",
 		      l2p_read_ios, l2p_read_blocks, l2p_write_ios, l2p_write_blocks);
 
-	uint64_t total_write_blocks = user_write_blocks + cmp_write_blocks + nvc_md_write_blocks;
+	// uint64_t total_write_blocks = user_write_blocks + cmp_write_blocks + nvc_md_write_blocks;
+	uint64_t total_write_blocks = user_write_blocks + cmp_write_blocks;
 	FTL_NOTICELOG(dev, "[STAT_WAF] %.4lf\n", (double)total_write_blocks / user_write_blocks);
+
+	FTL_NOTICELOG(dev, "Inactivate chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_inactive_count);
+	FTL_NOTICELOG(dev, "Full chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_full_count);
+	FTL_NOTICELOG(dev, "Free chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_free_count);
+	FTL_NOTICELOG(dev, "Open chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_open_count);
+	FTL_NOTICELOG(dev, "Comp chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_comp_count);
+	FTL_NOTICELOG(dev, "Compactor active cnt: %"PRIu64"\n", dev->nv_cache.compaction_active_count);
+	FTL_NOTICELOG(dev, "Free persist chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_free_persist_count);
+
+	ftl_dev_dump_stats(dev);
 
 	for (size_t i = 0; i < FTL_STATS_TYPE_MAX; i++) {
 		dev->stats.entries[i].read.interval_ios = 0;
@@ -823,8 +837,8 @@ ftl_core_poller(void *ctx)
 	}
 
 	ftl_process_io_queue(dev);
-	ftl_writer_run(&dev->writer_user);
-	ftl_writer_run(&dev->writer_gc);
+	// ftl_writer_run(&dev->writer_user);
+	// ftl_writer_run(&dev->writer_gc);
 	ftl_reloc(dev->reloc);
 	ftl_nv_cache_process(dev);
 	ftl_l2p_process(dev);

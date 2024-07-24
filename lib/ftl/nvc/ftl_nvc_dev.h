@@ -8,10 +8,13 @@
 #include "spdk/stdinc.h"
 #include "spdk/bdev_module.h"
 #include "ftl_layout.h"
+#include "ftl_nv_cache.h"
+#include "ftl_io.h"
 
 struct spdk_ftl_dev;
 struct ftl_mngt_process;
 struct ftl_nv_cache_chunk;
+struct ftl_nv_cache;
 
 /**
  * @brief NV Cache device features and capabilities
@@ -47,6 +50,21 @@ struct ftl_nv_cache_device_ops {
 	 * @retval false if chunk is not active
 	 */
 	bool (*is_chunk_active)(struct spdk_ftl_dev *dev, uint64_t chunk_offset);
+
+	/**
+	 * @brief Retrieves the user I/O tag associated with a logical block address (LBA) on the FTL device.
+	 *
+	 * This function is used to get the user I/O tag for a given LBA on the FTL device. The user I/O tag is a unique identifier
+	 * associated with each I/O operation issued by the user. It can be used to track and correlate I/O operations with their
+	 * corresponding LBAs.
+	 *
+	 * @param dev The FTL device structure.
+	 * @param lba The logical block address (LBA) for which to retrieve the user I/O tag.
+	 * @return The user I/O tag associated with the specified LBA.
+	 */
+	uint32_t (*get_user_io_tag)(struct spdk_ftl_dev *dev, uint64_t lba);
+
+	uint32_t (*get_group_tag_for_compaction)(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 
 	struct ftl_md_layout_ops md_layout_ops;
 };

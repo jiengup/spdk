@@ -12,6 +12,7 @@
 
 #include "ftl_io.h"
 #include "ftl_utils.h"
+#include "ftl_internal.h"
 #include "nvc/ftl_nvc_dev.h"
 
 /*
@@ -48,6 +49,9 @@
 /* Min and max modifier values */
 #define FTL_NV_CACHE_THROTTLE_MODIFIER_MIN	-0.8
 #define FTL_NV_CACHE_THROTTLE_MODIFIER_MAX	0.5
+
+#define FTL_MAX_OPEN_CHUNKS 6
+#define FTL_FREE_COMPACTION_THRESHOLD 10
 
 struct ftl_nvcache_restore;
 typedef void (*ftl_nv_cache_restore_fn)(struct ftl_nvcache_restore *, int, void *cb_arg);
@@ -105,6 +109,8 @@ struct ftl_nv_cache_chunk {
 
 	/* Offset from start lba of the cache */
 	uint64_t offset;
+
+	uint64_t idx;
 
 	/* P2L map */
 	struct ftl_p2l_map p2l_map;
@@ -175,7 +181,7 @@ struct ftl_nv_cache {
 	uint64_t chunk_count;
 
 	/* Current processed chunk */
-	struct ftl_nv_cache_chunk *chunk_current;
+	struct ftl_nv_cache_chunk *chunk_current[FTL_GROUP_TAG_NUM];
 
 	/* Free chunks list */
 	TAILQ_HEAD(, ftl_nv_cache_chunk) chunk_free_list;
@@ -210,6 +216,8 @@ struct ftl_nv_cache {
 	uint64_t last_seq_id;
 
 	uint64_t chunk_free_target;
+
+	uint64_t chunk_free_compaction_target;
 
 	/* Simple moving average of recent compaction velocity values */
 	double compaction_sma;
