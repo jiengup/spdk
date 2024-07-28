@@ -1,5 +1,6 @@
 import subprocess
 import re
+import pathlib
 
 def cat_and_grep(filename: str, pattern: str):
     command = f"cat {filename} | grep '{pattern}'"
@@ -33,11 +34,13 @@ def extract_stat_io(filename: str, item: str):
         else:
             print(f"cant search write IOPS: {line}")
         if re.search(read_bw_pattern, line):
-            r_bw.append(int(re.search(read_bw_pattern, line).group(1)))
+            bw = int(re.search(read_bw_pattern, line).group(1)) * 4096 / 1024 / 1024
+            r_bw.append(bw)
         else:
             print(f"cant search read BW: {line}")
         if re.search(write_bw_pattern, line):
-            w_bw.append(int(re.search(write_bw_pattern, line).group(1)))
+            bw = int(re.search(write_bw_pattern, line).group(1)) * 4096 / 1024 / 1024
+            w_bw.append(bw)
         else:
             print(f"cant search write BW: {line}")
     return {"read_IOPS": r_iops, "write_IOPS": w_iops, "read_bw": r_bw, "write_bw": w_bw}
@@ -48,14 +51,15 @@ def extract_stat_waf(filename: str):
     extracted_stat = extracted_stat.split("\n")
     extracted_stat = [line for line in extracted_stat if line != ""]
     valid_waf_pattern = r"\[STAT_WAF\] ([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"
-    invalid_waf_pattern = r"\[STAT_WAF\] ([-+]?nan)"
+    invalid_waf_pattern1 = r"\[STAT_WAF\] ([-+]?nan)"
+    invalid_waf_pattern2 = r"\[STAT_WAF\] ([-+]?inf)"
     
     wafs = []
     for line in extracted_stat:
         if re.search(valid_waf_pattern, line):
             waf = float(re.search(valid_waf_pattern, line).group(1))
             wafs.append(waf)
-        elif re.search(invalid_waf_pattern, line):
+        elif re.search(invalid_waf_pattern1, line) or re.search(invalid_waf_pattern2, line):
             wafs.append(0)
         else:
             print(f"cant search waf: {line}")
@@ -67,14 +71,15 @@ def extract_overall_waf(filename: str):
     extracted_stat = extracted_stat.split("\n")
     extracted_stat = [line for line in extracted_stat if line != ""]
     valid_waf_pattern = r"WAF:\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"
-    invalid_waf_pattern = r"WAF:\s+ ([-+]?nan)"
+    invalid_waf_pattern1 = r"WAF:\s+ ([-+]?nan)"
+    invalid_waf_pattern2 = r"WAF:\s+ ([-+]?inf)"
     
     wafs = []
     for line in extracted_stat:
         if re.search(valid_waf_pattern, line):
             waf = float(re.search(valid_waf_pattern, line).group(1))
             wafs.append(waf)
-        elif re.search(invalid_waf_pattern, line):
+        elif re.search(invalid_waf_pattern1, line) or re.search(invalid_waf_pattern2, line):
             wafs.append(0)
         else:
             print(f"cant search waf: {line}")
@@ -89,19 +94,39 @@ def extract_fio(result_f):
                 stat_line = lines[idx+1]
                 lat_line = lines[idx+4]
                 break
-    iops_pattern = r"IOPS=(\d+)k"
+    iops_pattern = r"IOPS=([-+]?[0-9]*\.?[0-9]+k?)"
     if re.search(iops_pattern, stat_line):
-        iops = int(re.search(iops_pattern, stat_line).group(1))
+        iops = re.search(iops_pattern, stat_line).group(1)
+        if iops.endswith("k"):
+            iops = float(iops[:-1]) * 1000
+        else:
+            iops = float(iops)
     else:
         print(f"cant search iops: {stat_line}")
-    bw_pattern = r"BW=\d+MiB/s \((\d+)MB/s\)"
+    bw_pattern = r"BW=\d+MiB/s \(([-+]?[0-9]*\.?[0-9]+)MB/s\)"
     if re.search(bw_pattern, stat_line):
-        bw = int(re.search(bw_pattern, stat_line).group(1))
+        bw = float(re.search(bw_pattern, stat_line).group(1))
     else:
         print(f"cant search bw: {stat_line}")
-    latency_pattern = r"avg=(\d+)"
+    latency_pattern = r"avg=\s?([-+]?[0-9]*\.?[0-9]+)"
     if re.search(latency_pattern, lat_line):
-        latency = int(re.search(latency_pattern, lat_line).group(1))
+        latency = float(re.search(latency_pattern, lat_line).group(1))
     else:
         print(f"cant search latency: {lat_line}")
-    return iops, bw, latency
+    return int(iops), bw, latency
+
+def dump_core_log(filename: str):
+    log_parent = pathlib.Path(filename).parent
+    log_name = pathlib.Path(filename).stem
+    core_log_path = log_parent / f"{log_name}_core.log"
+    out_f = open(core_log_path, "w")
+    in_f = open(filename, "r")
+    reset_cnt = 0
+    for line in in_f.readlines():
+        if "[STAT_OP] Stats after reset." in line:
+            reset_cnt += 1
+        if reset_cnt == 3:
+            out_f.write(line)
+    out_f.close()
+    in_f.close()
+    return core_log_path

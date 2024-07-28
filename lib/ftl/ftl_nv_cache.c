@@ -254,6 +254,12 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	FTL_NOTICELOG(dev, "NV cache chunk count %"PRIu64"\n", nv_cache->chunk_count);
 	nv_cache->tail_md_chunk_blocks = ftl_nv_cache_chunk_tail_md_num_blocks(nv_cache);
 	FTL_NOTICELOG(dev, "NV cache tail md blocks: %"PRIu64"\n", nv_cache->tail_md_chunk_blocks);
+	nv_cache->traffic_group_num = dev->conf.group_num;
+	FTL_NOTICELOG(dev, "NV cache traffic group num: %"PRIu8"\n", nv_cache->traffic_group_num);
+	nv_cache->max_open_chunks = spdk_divide_round_up(nv_cache->traffic_group_num * FTL_MAX_OPEN_CHUNK_FACTOR, 
+													 100);
+	assert(nv_cache->max_open_chunks <= nv_cache->chunk_count);
+	FTL_NOTICELOG(dev, "NV cache max open chunks: %"PRIu64"\n", nv_cache->max_open_chunks);
 
 	/* Allocate chunks */
 	nv_cache->chunks = calloc(nv_cache->chunk_count,
@@ -315,7 +321,7 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 		TAILQ_INSERT_TAIL(&nv_cache->compactor_list, compactor, entry);
 	}
 
-	nv_cache->p2l_pool = ftl_mempool_create(FTL_MAX_OPEN_CHUNKS,
+	nv_cache->p2l_pool = ftl_mempool_create(nv_cache->max_open_chunks,
 						nv_cache_p2l_map_pool_elem_size(nv_cache),
 						FTL_BLOCK_SIZE,
 						SPDK_ENV_SOCKET_ID_ANY);
@@ -324,7 +330,7 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	}
 
 	/* One entry per open chunk */
-	nv_cache->chunk_md_pool = ftl_mempool_create(FTL_MAX_OPEN_CHUNKS,
+	nv_cache->chunk_md_pool = ftl_mempool_create(nv_cache->max_open_chunks,
 				  sizeof(struct ftl_nv_cache_chunk_md),
 				  FTL_BLOCK_SIZE,
 				  SPDK_ENV_SOCKET_ID_ANY);
@@ -855,7 +861,6 @@ ftl_nv_cache_compaction_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_
 	uint64_t free_space, num_blocks;
 	uint32_t rq_tag;
 	struct ftl_nv_cache_chunk *chunk;
-	struct spdk_ftl_dev *dev = rq->dev;
 
 	assert(rq);
 
@@ -871,40 +876,50 @@ ftl_nv_cache_compaction_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_
 
 		if (!chunk) {
 			chunk = TAILQ_FIRST(&nv_cache->chunk_open_list);
-			// We can get chunk from open list, then we choose it.
 			if (chunk && chunk->md->state == FTL_CHUNK_STATE_OPEN) {
 				TAILQ_REMOVE(&nv_cache->chunk_open_list, chunk, entry);
 				nv_cache->chunk_current[rq_tag] = chunk;
 			} else {
-				// Or we need try to fetch chunk from the free list and open it.
-				if (TAILQ_EMPTY(&nv_cache->chunk_free_list)) {
-					break;
-				}
-				// TODO(fixme)
-				// if nv_cache has been halt? what to do?
-				if (spdk_likely(nv_cache->halt)) {
-					break;
-				}
-				// we can fetch from the free list
-				struct ftl_nv_cache_chunk *nchunk = TAILQ_FIRST(&nv_cache->chunk_free_list);
-				// doble check
-				if (!nchunk) {
-					break;
-				} else {
-					// just open it and do next loop to get
-					assert(nv_cache->chunk_open_count < FTL_MAX_OPEN_CHUNKS);
-					TAILQ_REMOVE(&nv_cache->chunk_free_list, nchunk, entry);
-					TAILQ_INSERT_TAIL(&nv_cache->chunk_open_list, nchunk, entry);
-					nv_cache->chunk_free_count--;
-					nchunk->md->seq_id = ftl_get_next_seq_id(dev);
-					ftl_chunk_open(nchunk);
-					ftl_add_io_activity(dev);
-					// chunk = nchunk;
-					// nv_cache->chunk_current[rq_tag] = chunk;
-					continue;
-				}
+				break;
 			}
 		}
+
+		// if (!chunk) {
+		// 	chunk = TAILQ_FIRST(&nv_cache->chunk_open_list);
+		// 	// We can get chunk from open list, then we choose it.
+		// 	if (chunk && chunk->md->state == FTL_CHUNK_STATE_OPEN) {
+		// 		TAILQ_REMOVE(&nv_cache->chunk_open_list, chunk, entry);
+		// 		nv_cache->chunk_current[rq_tag] = chunk;
+		// 	} else {
+		// 		// Or we need try to fetch chunk from the free list and open it.
+		// 		if (TAILQ_EMPTY(&nv_cache->chunk_free_list)) {
+		// 			break;
+		// 		}
+		// 		// TODO(fixme)
+		// 		// if nv_cache has been halt? what to do?
+		// 		if (spdk_likely(nv_cache->halt)) {
+		// 			break;
+		// 		}
+		// 		// we can fetch from the free list
+		// 		struct ftl_nv_cache_chunk *nchunk = TAILQ_FIRST(&nv_cache->chunk_free_list);
+		// 		// doble check
+		// 		if (!nchunk) {
+		// 			break;
+		// 		} else {
+		// 			// just open it and do next loop to get
+		// 			// TODO(fix)
+		// 			TAILQ_REMOVE(&nv_cache->chunk_free_list, nchunk, entry);
+		// 			TAILQ_INSERT_TAIL(&nv_cache->chunk_open_list, nchunk, entry);
+		// 			nv_cache->chunk_free_count--;
+		// 			nchunk->md->seq_id = ftl_get_next_seq_id(dev);
+		// 			ftl_chunk_open(nchunk);
+		// 			ftl_add_io_activity(dev);
+		// 			// chunk = nchunk;
+		// 			// nv_cache->chunk_current[rq_tag] = chunk;
+		// 			continue;
+		// 		}
+		// 	}
+		// }
 
 		// we get the chink
 		free_space = chunk_get_free_space(nv_cache, chunk);
@@ -1162,10 +1177,10 @@ get_chunk_for_compaction(struct ftl_nv_cache *nv_cache)
 	if (spdk_likely(chunk)) {
 		assert(chunk->md->write_pointer != 0);
 		TAILQ_INSERT_HEAD(&nv_cache->chunk_comp_list, chunk, entry);
-		uint64_t start = ftl_addr_from_nvc_offset(dev, chunk->offset);
-		uint64_t end = start + nv_cache->chunk_blocks - nv_cache->tail_md_chunk_blocks;
-		uint64_t valid_count = ftl_bitmap_count_set_range(dev->valid_map, start, end);
-		FTL_NOTICELOG(dev, "chunk valid block count: %"PRIu64"\n", valid_count);
+		// uint64_t start = ftl_addr_from_nvc_offset(dev, chunk->offset);
+		// uint64_t end = start + nv_cache->chunk_blocks - nv_cache->tail_md_chunk_blocks;
+		// uint64_t valid_count = ftl_bitmap_count_set_range(dev->valid_map, start, end);
+		// FTL_NOTICELOG(dev, "chunk valid block count: %"PRIu64"\n", valid_count);
 		nv_cache->chunk_comp_count++;
 	}
 
@@ -1348,11 +1363,12 @@ compaction_process(struct ftl_nv_cache *nv_cache)
 	if (!compactor) {
 		return;
 	}
-
-	TAILQ_REMOVE(&nv_cache->compactor_list, compactor, entry);
-	compactor->nv_cache->compaction_active_count++;
-	compaction_process_start(compactor);
-	ftl_add_io_activity(dev);
+	if (nv_cache->chunk_aopen_count >= nv_cache->max_open_chunks) {
+		TAILQ_REMOVE(&nv_cache->compactor_list, compactor, entry);
+		compactor->nv_cache->compaction_active_count++;
+		compaction_process_start(compactor);
+		ftl_add_io_activity(dev);
+	}
 }
 
 static void
@@ -1517,7 +1533,6 @@ static void
 ftl_nv_cache_submit_cb(struct spdk_bdev_io *bdev_io, bool success, void *cb_arg)
 {
 	struct ftl_io *io = cb_arg;
-	union ftl_md_vss *md = io->md;
 
 	ftl_stats_bdev_io_completed(io->dev, FTL_STATS_TYPE_USER, bdev_io);
 
@@ -1760,10 +1775,9 @@ ftl_nv_cache_process(struct spdk_ftl_dev *dev)
 
 	assert(dev->nv_cache.bdev_desc);
 
-	if (nv_cache->chunk_open_count < FTL_MAX_OPEN_CHUNKS && spdk_likely(!nv_cache->halt) &&
+	if (nv_cache->chunk_open_count < nv_cache->max_open_chunks && spdk_likely(!nv_cache->halt) &&
 	    !TAILQ_EMPTY(&nv_cache->chunk_free_list)) {
 		struct ftl_nv_cache_chunk *chunk = TAILQ_FIRST(&nv_cache->chunk_free_list);
-		struct ftl_nv_cache_chunk *tchunk;
 		TAILQ_REMOVE(&nv_cache->chunk_free_list, chunk, entry);
 		TAILQ_INSERT_TAIL(&nv_cache->chunk_open_list, chunk, entry);
 		nv_cache->chunk_free_count--;
@@ -1781,7 +1795,7 @@ static bool
 ftl_nv_cache_full(struct ftl_nv_cache *nv_cache)
 {
 	if (0 == nv_cache->chunk_open_count) {
-		for (size_t i = 0; i < FTL_GROUP_TAG_NUM; i++) {
+		for (size_t i = 0; i < nv_cache->traffic_group_num; i++) {
 			if (nv_cache->chunk_current[i] == NULL) {
 				return true;
 			}
@@ -1959,7 +1973,7 @@ ftl_nv_cache_load_state(struct ftl_nv_cache *nv_cache)
 	int status = 0;
 	bool active;
 
-	for (size_t i = 0; i < FTL_GROUP_TAG_NUM; i++) {
+	for (size_t i = 0; i < nv_cache->traffic_group_num; i++) {
 		nv_cache->chunk_current[i] = NULL;
 	}
 	TAILQ_INIT(&nv_cache->chunk_free_list);
@@ -2061,7 +2075,7 @@ ftl_nv_cache_load_state(struct ftl_nv_cache *nv_cache)
 
 	chunks_number = nv_cache->chunk_free_count + nv_cache->chunk_full_count +
 			nv_cache->chunk_inactive_count;
-	for (size_t i = 0; i < FTL_GROUP_TAG_NUM; i++) {
+	for (size_t i = 0; i < nv_cache->traffic_group_num; i++) {
 		assert(nv_cache->chunk_current[i] == NULL);
 	}
 
@@ -2217,7 +2231,7 @@ chunk_open_cb(int status, void *ctx)
 		ftl_abort();
 #endif
 	}
-
+	chunk->nv_cache->chunk_aopen_count++;
 	chunk->md->state = FTL_CHUNK_STATE_OPEN;
 }
 
@@ -2230,6 +2244,7 @@ ftl_chunk_open(struct ftl_nv_cache_chunk *chunk)
 	struct ftl_md *md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_NVC_MD];
 
 	if (chunk_alloc_p2l_map(chunk)) {
+		ftl_show_stat(dev);
 		assert(0);
 		/*
 		 * We control number of opening chunk and it shall be consistent with size of chunk
@@ -2271,7 +2286,6 @@ chunk_close_cb(int status, void *ctx)
 		/* Chunk full move it on full list */
 		TAILQ_INSERT_TAIL(&chunk->nv_cache->chunk_full_list, chunk, entry);
 		chunk->nv_cache->chunk_full_count++;
-		struct spdk_ftl_dev *dev = SPDK_CONTAINEROF(chunk->nv_cache, struct spdk_ftl_dev, nv_cache);
 		// FTL_NOTICELOG(dev, "open list(%"PRIu64") -> full list(%"PRIu64")\n",
 		// 	      chunk->nv_cache->chunk_open_count, chunk->nv_cache->chunk_full_count);
 
@@ -2876,7 +2890,7 @@ ftl_nv_cache_halt(struct ftl_nv_cache *nv_cache)
 	}
 
 	/* Close current chunk by skipping all not written blocks */
-	for (size_t i = 0; i < FTL_GROUP_TAG_NUM; i++) {
+	for (size_t i = 0; i < nv_cache->traffic_group_num; i++) {
 		chunk = nv_cache->chunk_current[i];
 		if (chunk != NULL) {
 			nv_cache->chunk_current[i] = NULL;

@@ -56,6 +56,15 @@ io_channel_create_cb(void *io_device, void *ctx)
 
 	FTL_NOTICELOG(dev, "FTL IO channel created on %s\n",
 		      spdk_thread_get_name(spdk_get_thread()));
+	
+	FTL_NOTICELOG(dev, "[STAT_OP] Stats before reset.\n");
+	ftl_show_stat(dev);
+	
+	FTL_NOTICELOG(dev, "[STAT_OP] Reset IO stats\n");
+	ftl_dev_reset_stats(dev);
+
+	FTL_NOTICELOG(dev, "[STAT_OP] Stats after reset.\n");
+	ftl_show_stat(dev);
 
 	/* This gets unregistered asynchronously with the device -
 	 * we can't just use the ctx buffer passed by the thread library

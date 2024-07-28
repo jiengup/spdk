@@ -2,7 +2,7 @@
 #include "ftl_nvc_op.h"
 
 struct ftl_nv_cache_device_type nvc_bdev_vss = {
-	.name = "single group",
+	.name = "single_group",
 	.features = {
 	},
 	.ops = {

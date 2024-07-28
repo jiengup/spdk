@@ -112,7 +112,6 @@ struct spdk_ftl_conf {
 
 		/* Percentage of chunks to maintain free */
 		uint32_t			chunk_free_target;
-		char				*type_name;
 	} nv_cache;
 
 	/*
@@ -138,12 +137,15 @@ struct spdk_ftl_conf {
 	/* Name of cache block device (must support extended metadata) */
 	char					*cache_bdev;
 
+	char					*algo;
+
 	/* Enable fast shutdown path */
 	bool					fast_shutdown;
 
 	/* Hole at bytes 0x79 - 0x7f. */
 	// uint8_t					reserved2[7];
-	uint8_t					reserved2[1];
+	// uint8_t					reserved2[1];
+	uint8_t					group_num;
 
 	/*
 	 * The size of spdk_ftl_conf according to the caller of this library is used for ABI

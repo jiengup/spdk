@@ -31,7 +31,7 @@ ftl_nv_cache_device_type_get_type(const char *name)
 static bool
 config_select_type(const struct spdk_ftl_dev *dev, const struct ftl_nv_cache_device_type *type)
 {
-	return !strcmp(dev->conf.nv_cache.type_name, type->name);
+	return !strcmp(dev->conf.algo, type->name);
 }
 
 static bool
@@ -95,6 +95,7 @@ ftl_nv_cache_device_get_type_by_bdev(struct spdk_ftl_dev *dev, struct spdk_bdev 
 	uint32_t cnt = 0;
 	TAILQ_FOREACH(entry, &g_devs, internal.entry) {
 		if (entry->ops.is_bdev_compatible) {
+			SPDK_NOTICELOG("dev algo: %s, entry name: %s\n", dev->conf.algo, entry->name);
 			if (entry->ops.is_bdev_compatible(dev, bdev) && config_select_type(dev, entry)) {
 				type = entry;
 				cnt ++;

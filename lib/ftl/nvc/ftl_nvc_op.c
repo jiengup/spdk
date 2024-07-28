@@ -119,6 +119,7 @@ md_region_open(struct spdk_ftl_dev *dev, enum ftl_layout_region_type reg_type, u
 uint32_t
 single_chunk_get_user_io_tag(struct spdk_ftl_dev *dev, uint64_t lba)
 {
+	assert(dev->nv_cache.traffic_group_num == 1);
     return 0;
 }
 
@@ -127,12 +128,13 @@ random_chunk_get_user_io_tag(struct spdk_ftl_dev *dev, uint64_t lba)
 {
     srand(time(NULL));
     uint32_t randn = rand();
-    return randn % FTL_GROUP_TAG_NUM;
+    return randn % dev->nv_cache.traffic_group_num;
 }
 
 uint32_t
 get_single_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
 {
+	assert(nv_cache->traffic_group_num == 1);
     return 0;
 }
 
@@ -141,5 +143,5 @@ get_random_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq
 {
     srand(time(NULL));
     uint32_t randn = rand();
-    return randn % FTL_GROUP_TAG_NUM;
+    return randn % nv_cache->traffic_group_num;
 }

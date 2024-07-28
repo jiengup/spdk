@@ -216,6 +216,8 @@
             "name": "ftl0",
             "overprovisioning": 60,
             "l2p_dram_limit": 2048,
+            "algo": "single_group",
+            "group_num": 1,
             "fast_shutdown": false,
             "base_bdev": "Nvme1n1p0",
             "cache": "Nvme0n1p0"

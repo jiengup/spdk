@@ -38,6 +38,7 @@ static const struct spdk_json_object_decoder rpc_bdev_ftl_create_decoders[] = {
 	{"base_bdev", offsetof(struct spdk_ftl_conf, base_bdev), spdk_json_decode_string},
 	{"uuid", offsetof(struct spdk_ftl_conf, uuid), spdk_json_decode_uuid, true},
 	{"cache", offsetof(struct spdk_ftl_conf, cache_bdev), spdk_json_decode_string},
+	{"algo", offsetof(struct spdk_ftl_conf, algo), spdk_json_decode_string},
 	{
 		"overprovisioning", offsetof(struct spdk_ftl_conf, overprovisioning),
 		spdk_json_decode_uint64, true
@@ -53,6 +54,10 @@ static const struct spdk_json_object_decoder rpc_bdev_ftl_create_decoders[] = {
 	{
 		"fast_shutdown", offsetof(struct spdk_ftl_conf, fast_shutdown),
 		spdk_json_decode_bool, true
+	},
+	{
+		"group_num", offsetof(struct spdk_ftl_conf, group_num),
+		spdk_json_decode_uint8, true
 	},
 };
 

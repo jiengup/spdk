@@ -225,6 +225,9 @@ bdev_ftl_write_config_json(struct spdk_bdev *bdev, struct spdk_json_write_ctx *w
 
 	spdk_json_write_named_uint64(w, "overprovisioning", conf.overprovisioning);
 	spdk_json_write_named_uint64(w, "l2p_dram_limit", conf.l2p_dram_limit);
+	spdk_json_write_named_uint8(w, "group_num", conf.group_num);
+
+	spdk_json_write_named_string(w, "algo", conf.algo);
 
 	if (conf.core_mask) {
 		spdk_json_write_named_string(w, "core_mask", conf.core_mask);

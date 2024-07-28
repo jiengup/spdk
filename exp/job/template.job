@@ -1,6 +1,6 @@
 [global]
 ioengine=/data/guntherxing/dev/spdk/build/fio/spdk_bdev
-spdk_json_conf=/data/guntherxing/dev/spdk/test/ftl/config/ftl_test.json
+spdk_json_conf=/data/guntherxing/dev/spdk/exp/config/debug_ftl_op20.json
 direct=1
 iodepth=128
 bs=4k

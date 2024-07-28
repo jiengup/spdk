@@ -9,7 +9,7 @@
 #include "ftl_core.h"
 #include "ftl_utils.h"
 
-static const struct spdk_ftl_conf g_default_conf = {
+struct spdk_ftl_conf g_default_conf = {
 	/* 2 free bands - compaction is blocked, gc only */
 	.limits[SPDK_FTL_LIMIT_CRIT]	= 2,
 	/* 3 free bands */
@@ -24,10 +24,10 @@ static const struct spdk_ftl_conf g_default_conf = {
 	.l2p_dram_limit = 2048,
 	/* IO pool size per user thread (this should be adjusted to thread IO qdepth) */
 	.user_io_pool_size = 2048,
+	.group_num = 1,
 	.nv_cache = {
 		.chunk_compaction_threshold = 99,
 		.chunk_free_target = 5,
-		.type_name = "single group",
 	},
 	.fast_shutdown = true,
 };
@@ -37,7 +37,6 @@ spdk_ftl_get_default_conf(struct spdk_ftl_conf *conf, size_t conf_size)
 {
 	assert(conf_size > 0);
 	assert(conf_size <= sizeof(struct spdk_ftl_conf));
-
 	memcpy(conf, &g_default_conf, conf_size);
 	conf->conf_size = conf_size;
 }
@@ -59,6 +58,7 @@ spdk_ftl_conf_copy(struct spdk_ftl_conf *dst, const struct spdk_ftl_conf *src)
 	char *core_mask = NULL;
 	char *base_bdev = NULL;
 	char *cache_bdev = NULL;
+	char *algo = NULL;
 
 	if (!src->conf_size || src->conf_size > sizeof(struct spdk_ftl_conf)) {
 		return -EINVAL;
@@ -88,19 +88,26 @@ spdk_ftl_conf_copy(struct spdk_ftl_conf *dst, const struct spdk_ftl_conf *src)
 			goto error;
 		}
 	}
-
+	if (src->algo) {
+		algo = strdup(src->algo);
+		if (!algo) {
+			goto error;
+		}
+	}
 	memcpy(dst, src, src->conf_size);
 
 	dst->name = name;
 	dst->core_mask = core_mask;
 	dst->base_bdev = base_bdev;
 	dst->cache_bdev = cache_bdev;
+	dst->algo = algo;
 	return 0;
 error:
 	free(name);
 	free(core_mask);
 	free(base_bdev);
 	free(cache_bdev);
+	free(algo);
 	return -ENOMEM;
 }
 
@@ -111,6 +118,7 @@ spdk_ftl_conf_deinit(struct spdk_ftl_conf *conf)
 	free(conf->core_mask);
 	free(conf->base_bdev);
 	free(conf->cache_bdev);
+	free(conf->algo);
 }
 
 int
@@ -133,6 +141,10 @@ ftl_conf_init_dev(struct spdk_ftl_dev *dev, const struct spdk_ftl_conf *conf)
 	}
 	if (!conf->cache_bdev) {
 		FTL_ERRLOG(dev, "No NV cache device in configuration\n");
+		return -EINVAL;
+	}
+	if (!conf->algo) {
+		FTL_ERRLOG(dev, "No algorithm in configuration\n");
 		return -EINVAL;
 	}
 

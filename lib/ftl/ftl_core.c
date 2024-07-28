@@ -810,6 +810,7 @@ ftl_show_stat(struct spdk_ftl_dev *dev)
 	FTL_NOTICELOG(dev, "Full chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_full_count);
 	FTL_NOTICELOG(dev, "Free chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_free_count);
 	FTL_NOTICELOG(dev, "Open chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_open_count);
+	FTL_NOTICELOG(dev, "Already open chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_aopen_count);
 	FTL_NOTICELOG(dev, "Comp chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_comp_count);
 	FTL_NOTICELOG(dev, "Compactor active cnt: %"PRIu64"\n", dev->nv_cache.compaction_active_count);
 	FTL_NOTICELOG(dev, "Free persist chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_free_persist_count);
@@ -823,6 +824,21 @@ ftl_show_stat(struct spdk_ftl_dev *dev)
 		dev->stats.entries[i].write.interval_blocks = 0;
 	}
 	dev->show_stat.start_tsc = tsc;
+}
+
+void
+ftl_dev_reset_stats(struct spdk_ftl_dev *dev)
+{
+	for (size_t i = 0; i < FTL_STATS_TYPE_MAX; i++) {
+		dev->stats.entries[i].read.blocks = 0;
+		dev->stats.entries[i].read.ios = 0;
+		dev->stats.entries[i].write.blocks = 0;
+		dev->stats.entries[i].write.ios = 0;
+		dev->stats.entries[i].read.interval_ios = 0;
+		dev->stats.entries[i].read.interval_blocks = 0;
+		dev->stats.entries[i].write.interval_ios = 0;
+		dev->stats.entries[i].write.interval_blocks = 0;
+	}
 }
 
 int

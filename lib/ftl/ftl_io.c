@@ -177,8 +177,8 @@ ftl_io_init(struct spdk_io_channel *_ioch, struct ftl_io *io, uint64_t lba, size
 	io->addr = FTL_ADDR_INVALID;
 	io->cb_ctx = cb_ctx;
 	io->lba = lba;
-	io->tag = io->dev->nv_cache.nvc_type->ops.get_user_io_tag(dev, io->lba);
-	assert(io->tag < FTL_GROUP_TAG_NUM);
+	io->tag = dev->nv_cache.nvc_type->ops.get_user_io_tag(dev, io->lba);
+	assert(io->tag < dev->nv_cache.traffic_group_num);
 	io->user_fn = cb_fn;
 	io->iov = iov;
 	io->iov_cnt = iov_cnt;

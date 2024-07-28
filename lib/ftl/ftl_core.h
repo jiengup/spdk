@@ -216,7 +216,9 @@ void ftl_invalidate_addr(struct spdk_ftl_dev *dev, ftl_addr addr);
 int ftl_core_poller(void *ctx);
 
 int ftl_io_channel_poll(void *arg);
+
 void ftl_show_stat(struct spdk_ftl_dev *dev);
+void ftl_dev_reset_stats(struct spdk_ftl_dev *dev);
 
 struct ftl_io_channel *ftl_io_channel_get_ctx(struct spdk_io_channel *ioch);
 
