@@ -214,9 +214,9 @@
           "method": "bdev_ftl_create",
           "params": {
             "name": "ftl0",
-            "overprovisioning": 60,
+            "overprovisioning": 20,
             "l2p_dram_limit": 2048,
-            "algo": "single_group",
+            "algo": "single_group_greedy",
             "group_num": 1,
             "fast_shutdown": false,
             "base_bdev": "Nvme1n1p0",

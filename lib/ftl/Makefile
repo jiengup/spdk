@@ -41,7 +41,6 @@ C_SRCS += nvc/ftl_nvc_dev.c
 C_SRCS += nvc/ftl_nvc_op.c
 
 C_SRCS += nvc/ftl_nvc_bdev_vss.c 
-C_SRCS += nvc/ftl_nvc_bdev_random_group_vss.c
 
 C_SRCS += base/ftl_base_dev.c base/ftl_base_bdev.c
 ifeq ($(CONFIG_DEBUG),y)

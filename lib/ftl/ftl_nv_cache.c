@@ -255,6 +255,7 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	nv_cache->tail_md_chunk_blocks = ftl_nv_cache_chunk_tail_md_num_blocks(nv_cache);
 	FTL_NOTICELOG(dev, "NV cache tail md blocks: %"PRIu64"\n", nv_cache->tail_md_chunk_blocks);
 	nv_cache->traffic_group_num = dev->conf.group_num;
+	FTL_NOTICELOG(dev, "NV cache chunk tail md offset: %"PRIu64"\n", chunk_tail_md_offset(nv_cache));
 	FTL_NOTICELOG(dev, "NV cache traffic group num: %"PRIu8"\n", nv_cache->traffic_group_num);
 	nv_cache->max_open_chunks = spdk_divide_round_up(nv_cache->traffic_group_num * FTL_MAX_OPEN_CHUNK_FACTOR, 
 													 100);
@@ -289,6 +290,8 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 		chunk->nv_cache = nv_cache;
 		chunk->md = md;
 		chunk->md->version = FTL_NVC_VERSION_CURRENT;
+		chunk->md->tag = FTL_TAG_INVALID;
+		chunk->md->valid_count = 0;
 		nvc_validate_md(nv_cache, md);
 		chunk->offset = offset;
 		chunk->idx = get_chunk_idx(chunk);
@@ -351,6 +354,19 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	}
 
 	ftl_nv_cache_init_update_limits(dev);
+
+	nv_cache->lba_timestamp_table = calloc(dev->num_lbas, sizeof(uint64_t));
+	if (!nv_cache->lba_timestamp_table) {
+		FTL_ERRLOG(dev, "Failed to initialize NV cache lba timestamp table\n");
+		return -1;
+	}
+
+	for (size_t i = 0; i < dev->num_lbas; i++) {
+		nv_cache->lba_timestamp_table[i] = UINT64_MAX;
+	}
+	// sepbit sepesific
+	nv_cache->nvc_type->ops.algo_info_init(nv_cache);
+
 	ftl_property_register(dev, "cache_device", NULL, 0, NULL, NULL, ftl_property_dump_cache_dev, NULL,
 			      NULL, true);
 	return 0;
@@ -415,6 +431,9 @@ ftl_nv_cache_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_io *io)
 
 	do {
 		chunk = nv_cache->chunk_current[io_tag];
+		if (chunk && chunk->md->state != FTL_CHUNK_STATE_OPEN) {
+			chunk = NULL;
+		}
 		/* Chunk has been closed so pick new one */
 		if (chunk && chunk_is_closed(chunk))  {
 			chunk = NULL;
@@ -425,6 +444,8 @@ ftl_nv_cache_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_io *io)
 			if (chunk && chunk->md->state == FTL_CHUNK_STATE_OPEN) {
 				TAILQ_REMOVE(&nv_cache->chunk_open_list, chunk, entry);
 				nv_cache->chunk_current[io_tag] = chunk;
+				assert(chunk->md->tag == FTL_TAG_INVALID);
+				chunk->md->tag = io_tag;
 			} else {
 				break;
 			}
@@ -477,7 +498,7 @@ ftl_nv_cache_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_io *io)
 void
 ftl_nv_cache_fill_md(struct ftl_io *io)
 {
-	struct spdk_ftl_dev *dev = io->dev;
+	// struct spdk_ftl_dev *dev = io->dev;
 	// struct ftl_nv_cache_chunk *chunk = io->nv_cache_chunk;
 	uint64_t i;
 	union ftl_md_vss *metadata = io->md;
@@ -486,7 +507,7 @@ ftl_nv_cache_fill_md(struct ftl_io *io)
 	for (i = 0; i < io->num_blocks; ++i, lba++, metadata++) {
 		metadata->nv_cache.lba = lba;
 		// metadata->nv_cache.seq_id = chunk->md->seq_id;
-		metadata->nv_cache.timestamp = ftl_get_next_timestamp(dev);
+		metadata->nv_cache.timestamp = io->timestamp;
 	}
 }
 
@@ -811,8 +832,9 @@ compaction_process_pin_lba_rw(void *arg)
 		// assert(chunk->md->seq_id == md->nv_cache.seq_id);
 		assert(md->nv_cache.lba != FTL_LBA_INVALID);
 		assert(entry->lba == FTL_LBA_INVALID);
+		entry->lba = md->nv_cache.lba;
 
-		ftl_l2p_pin(dev, md->nv_cache.lba, 1, compaction_process_pin_lba_rw_cb, comp, pin_ctx);
+		ftl_l2p_pin(dev, entry->lba, 1, compaction_process_pin_lba_rw_cb, comp, pin_ctx);
 	}
 }
 
@@ -827,11 +849,9 @@ compaction_process_finish_rewrite(struct ftl_nv_cache_compactor *compactor)
 
 	FTL_RQ_ENTRY_LOOP(rq, entry, rq->iter.count) {
 		struct ftl_nv_cache_chunk *chunk = entry->owner.priv;
-		union ftl_md_vss *md = entry->io_md;
 		entry->new_addr = new_addr;
-		assert(md->nv_cache.lba != FTL_LBA_INVALID);
-		assert(entry->lba == FTL_LBA_INVALID);
-		entry->lba = md->nv_cache.lba;
+
+		assert(entry->lba != FTL_LBA_INVALID);
 
 		current_addr = ftl_l2p_get(dev, entry->lba);
 		if (current_addr == entry->addr) {
@@ -841,8 +861,8 @@ compaction_process_finish_rewrite(struct ftl_nv_cache_compactor *compactor)
 		} else {
 			/* just omit this rewrite. Do we need to invalid this new physical addr? */
 			/* yes we need! */
-			ftl_invalidate_addr(dev, entry->new_addr);
-			ftl_invalidate_addr(dev, entry->addr);
+			ftl_nv_cache_clear_addr(dev, entry->new_addr);
+			ftl_nv_cache_clear_addr(dev, entry->addr);
 		}
 		chunk_compaction_advance(chunk, 1);
 		ftl_l2p_unpin(dev, entry->lba, 1);
@@ -866,10 +886,14 @@ ftl_nv_cache_compaction_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_
 
 	num_blocks = rq->iter.count;
 	rq_tag = nv_cache->nvc_type->ops.get_group_tag_for_compaction(nv_cache, rq);
+	assert(rq_tag < nv_cache->traffic_group_num);
 
 	do {
 		chunk = nv_cache->chunk_current[rq_tag];
 		/* Chunk has been closed so pick new one */
+		if (chunk && chunk->md->state != FTL_CHUNK_STATE_OPEN) {
+			chunk = NULL;
+		}
 		if (chunk && chunk_is_closed(chunk))  {
 			chunk = NULL;
 		}
@@ -879,6 +903,8 @@ ftl_nv_cache_compaction_get_wr_buffer(struct ftl_nv_cache *nv_cache, struct ftl_
 			if (chunk && chunk->md->state == FTL_CHUNK_STATE_OPEN) {
 				TAILQ_REMOVE(&nv_cache->chunk_open_list, chunk, entry);
 				nv_cache->chunk_current[rq_tag] = chunk;
+				assert(chunk->md->tag == FTL_TAG_INVALID);
+				chunk->md->tag = rq_tag;
 			} else {
 				break;
 			}
@@ -1143,29 +1169,17 @@ get_chunk_for_compaction(struct ftl_nv_cache *nv_cache)
 	}
 
 	if (!TAILQ_EMPTY(&nv_cache->chunk_full_list)) {
-#define GREEDY
-#ifdef GREEDY
-		struct ftl_nv_cache_chunk *nchunk, *tchunk;
-		uint64_t min_valid = UINT64_MAX;
-		TAILQ_FOREACH_SAFE(nchunk, &nv_cache->chunk_full_list, entry, tchunk) {
-			uint64_t start = ftl_addr_from_nvc_offset(dev, nchunk->offset);
-			uint64_t end = start + nv_cache->chunk_blocks - nv_cache->tail_md_chunk_blocks;
-			uint64_t valid_count = ftl_bitmap_count_set_range(dev->valid_map, start, end);
-			if (min_valid > valid_count) {
-				chunk = nchunk;
-				min_valid = valid_count;
-			}
-		}
-#else
-		chunk = TAILQ_FIRST(&nv_cache->chunk_full_list);
-#endif
+		chunk = nv_cache->nvc_type->ops.choose_chunk_for_compaction(nv_cache);
+		assert(chunk != NULL);
 		TAILQ_REMOVE(&nv_cache->chunk_full_list, chunk, entry);
 		assert(chunk->md->write_pointer);
 
+		nv_cache->nvc_type->ops.algo_info_update(nv_cache, chunk);
+
 		/* If all the blocks are valid, we shoud not compaction this block */
 		uint64_t start = ftl_addr_from_nvc_offset(dev, chunk->offset);
-		uint64_t end = start + nv_cache->chunk_blocks - nv_cache->tail_md_chunk_blocks;
-		if (ftl_bitmap_count_set_range(dev->valid_map, start, end) == chunk_tail_md_offset(chunk->nv_cache)-1) {
+		uint64_t end = start + (nv_cache->chunk_blocks - nv_cache->tail_md_chunk_blocks);
+		if (chunk->md->valid_count == chunk_tail_md_offset(chunk->nv_cache)) {
 			ftl_show_stat(dev);
 			TAILQ_INSERT_TAIL(&nv_cache->chunk_full_list, chunk, entry);
 			return NULL;
@@ -1533,13 +1547,16 @@ static void
 ftl_nv_cache_submit_cb(struct spdk_bdev_io *bdev_io, bool success, void *cb_arg)
 {
 	struct ftl_io *io = cb_arg;
+	union ftl_md_vss *md = io->md;
 
 	ftl_stats_bdev_io_completed(io->dev, FTL_STATS_TYPE_USER, bdev_io);
 
-	/* SPDK_NOTICELOG("[SUCCESS] Finnaly LBA %"PRIu64" writing to NV cache addres [timestamp/ck_id/offset/tag] \
+	/* 
+	SPDK_NOTICELOG("[SUCCESS] Finnaly LBA %"PRIu64" writing to NV cache addres [timestamp/ck_id/offset/tag] \
 				   %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu32", written blocks %"PRIu64"\n", \
 	 			   io->lba, md->nv_cache.timestamp, io->nv_cache_chunk->idx, \
-				   io->chunk_offset, io->tag, io->num_blocks); */
+				   io->chunk_offset, io->tag, io->num_blocks);
+	*/
 
 	spdk_bdev_free_io(bdev_io);
 
@@ -1606,6 +1623,17 @@ ftl_nv_cache_pin_cb(struct spdk_ftl_dev *dev, int status, struct ftl_l2p_pin_ctx
 	nv_cache_write(io);
 }
 
+static void
+update_timestamp_table(struct ftl_nv_cache *nv_cache, struct ftl_io *io)
+{
+	uint64_t *lba_timestamp_table = nv_cache->lba_timestamp_table;
+	uint64_t lba = ftl_io_get_lba(io, 0);
+	uint64_t i;
+	for (i = 0; i < io->num_blocks; ++i, lba++) {
+		lba_timestamp_table[lba] = io->timestamp;
+	}
+}
+
 bool
 ftl_nv_cache_write(struct ftl_io *io)
 {
@@ -1617,7 +1645,14 @@ ftl_nv_cache_write(struct ftl_io *io)
 		return false;
 	}
 
+	assert(io->nv_cache_chunk == NULL);
+	io->timestamp = ftl_get_timestamp(dev);
+	io->tag = dev->nv_cache.nvc_type->ops.get_user_io_tag(dev, io);
+	assert(io->tag < dev->nv_cache.traffic_group_num);
+
 	ftl_nv_cache_fill_md(io);
+	// TODO(checkme)
+	ftl_increase_timestamp(dev, io->num_blocks);
 	/* Reserve area on the write buffer cache */
 	cache_offset = ftl_nv_cache_get_wr_buffer(&dev->nv_cache, io);
 	if (cache_offset == FTL_LBA_INVALID) {
@@ -1626,8 +1661,11 @@ ftl_nv_cache_write(struct ftl_io *io)
 		return false;
 	}
 	io->addr = ftl_addr_from_nvc_offset(dev, cache_offset);
+	assert(io->tag == io->nv_cache_chunk->md->tag);
 	assert(io->nv_cache_chunk == dev->nv_cache.chunk_current[io->tag]);
 	// io->nv_cache_chunk = dev->nv_cache.chunk_current[io->tag];
+
+	update_timestamp_table(&dev->nv_cache, io);
 
 	ftl_l2p_pin(io->dev, io->lba, io->num_blocks,
 		    ftl_nv_cache_pin_cb, io,
@@ -1727,6 +1765,22 @@ ftl_nv_cache_set_addr(struct spdk_ftl_dev *dev, uint64_t lba, ftl_addr addr)
 
 	ftl_chunk_set_addr(chunk, lba, addr);
 	ftl_bitmap_set(dev->valid_map, addr);
+	chunk->md->valid_count ++;
+}
+
+void
+ftl_nv_cache_clear_addr(struct spdk_ftl_dev *dev, ftl_addr addr)
+{
+	assert(ftl_addr_in_nvc(dev, addr));
+	struct ftl_nv_cache_chunk *chunk;
+
+	chunk = ftl_nv_cache_get_chunk_from_addr(dev, addr);
+	if (ftl_bitmap_get(dev->valid_map, addr)) {
+		assert(chunk->md->valid_count > 0);
+		ftl_bitmap_clear(dev->valid_map, addr);
+		chunk->md->last_invalid_timestamp = ftl_get_timestamp(dev);
+		chunk->md->valid_count --;
+	}
 }
 
 static void
@@ -1783,6 +1837,8 @@ ftl_nv_cache_process(struct spdk_ftl_dev *dev)
 		nv_cache->chunk_free_count--;
 		chunk->md->seq_id = ftl_get_next_seq_id(dev);
 		ftl_chunk_open(chunk);
+		chunk->md->timestamp = ftl_get_timestamp(dev);
+		chunk->md->last_invalid_timestamp = ftl_get_timestamp(dev);
 		ftl_add_io_activity(dev);
 	}
 
@@ -2258,6 +2314,10 @@ ftl_chunk_open(struct ftl_nv_cache_chunk *chunk)
 
 	assert(chunk->md->write_pointer == 0);
 	assert(chunk->md->blocks_written == 0);
+	assert(chunk->md->valid_count == 0);
+	// FTL_NOTICELOG(dev, "[OPEN] chunk %"PRIu64", tag: %"PRIu8" creation timestamp: %"PRIu64"\n",
+	// 					chunk->idx, chunk->md->tag, chunk->md->timestamp);
+	assert(chunk->md->tag == FTL_TAG_INVALID);
 
 	memcpy(p2l_map->chunk_dma_md, chunk->md, region->entry_size * FTL_BLOCK_SIZE);
 	p2l_map->chunk_dma_md->state = FTL_CHUNK_STATE_OPEN;
@@ -2272,8 +2332,11 @@ static void
 chunk_close_cb(int status, void *ctx)
 {
 	struct ftl_nv_cache_chunk *chunk = (struct ftl_nv_cache_chunk *)ctx;
-
-
+	
+	struct spdk_ftl_dev *dev = SPDK_CONTAINEROF(chunk->nv_cache, struct spdk_ftl_dev, nv_cache);
+	// FTL_NOTICELOG(dev, "[CLOSE SUCCESS] chunk %"PRIu64" creation timestamp: %"PRIu64", close timestamp: %"PRIu64"\n",
+	// 					chunk->idx, chunk->md->timestamp, chunk->md->close_timestamp);
+	
 	assert(chunk->md->write_pointer == chunk->nv_cache->chunk_blocks);
 
 	if (spdk_likely(!status)) {
@@ -2281,7 +2344,9 @@ chunk_close_cb(int status, void *ctx)
 		chunk_free_p2l_map(chunk);
 
 		assert(chunk->nv_cache->chunk_open_count > 0);
+		assert(chunk->nv_cache->chunk_aopen_count > 0);
 		chunk->nv_cache->chunk_open_count--;
+		chunk->nv_cache->chunk_aopen_count--;
 
 		/* Chunk full move it on full list */
 		TAILQ_INSERT_TAIL(&chunk->nv_cache->chunk_full_list, chunk, entry);
@@ -2338,11 +2403,13 @@ ftl_chunk_close(struct ftl_nv_cache_chunk *chunk)
 	struct ftl_basic_rq *brq = &chunk->metadata_rq;
 	void *metadata = chunk->p2l_map.chunk_map;
 	// TODO(fixme): close twice
+	assert(chunk->md->blocks_written == chunk_tail_md_offset(chunk->nv_cache));
 	if (chunk_is_closed(chunk)) {
 		return;
 	}
 
 	chunk->md->close_seq_id = ftl_get_next_seq_id(dev);
+	chunk->md->close_timestamp = ftl_get_timestamp(dev);
 	ftl_basic_rq_init(dev, brq, metadata, chunk->nv_cache->tail_md_chunk_blocks);
 	ftl_basic_rq_set_owner(brq, chunk_map_write_cb, chunk);
 	
@@ -3003,4 +3070,5 @@ ftl_nv_cache_chunk_md_initialize(struct ftl_nv_cache_chunk_md *md)
 {
 	memset(md, 0, sizeof(*md));
 	md->version = FTL_NVC_VERSION_CURRENT;
+	md->tag = FTL_TAG_INVALID;
 }

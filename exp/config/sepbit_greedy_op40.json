@@ -215,7 +215,7 @@
           "params": {
             "name": "ftl0",
             "overprovisioning": 40,
-            "algo": "random_group",
+            "algo": "sepbit_greedy",
             "group_num": 6,
             "l2p_dram_limit": 2048,
             "fast_shutdown": false,

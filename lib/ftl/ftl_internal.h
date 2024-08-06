@@ -19,6 +19,7 @@
 #define FTL_ADDR_INVALID	((ftl_addr)-1)
 /* Marks LBA as invalid */
 #define FTL_LBA_INVALID		((uint64_t)-1)
+#define FTL_TAG_INVALID  	((uint8_t)-1)
 /* Smallest data unit size */
 #define FTL_BLOCK_SIZE		4096ULL
 

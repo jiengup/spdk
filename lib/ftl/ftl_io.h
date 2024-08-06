@@ -67,6 +67,7 @@ struct ftl_io {
 	
 	/* User io tag using for grouping */
 	uint32_t			tag;
+	uint64_t 			timestamp;
 
 	/* First address of write when sent to cache device */
 	ftl_addr			addr;

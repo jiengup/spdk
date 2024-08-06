@@ -160,16 +160,16 @@ ftl_l2p_update(struct spdk_ftl_dev *dev, uint64_t lba, ftl_addr new_addr, ftl_ad
 		ftl_nv_cache_set_addr(dev, lba, new_addr);
 		ftl_l2p_set(dev, lba, new_addr);
 		if (current_addr != FTL_ADDR_INVALID) {
-			ftl_invalidate_addr(dev, current_addr);
+			ftl_nv_cache_clear_addr(dev, current_addr);
 		}
 	} else {
 		if (current_addr == old_addr) {
 			ftl_nv_cache_set_addr(dev, lba, new_addr);
 			ftl_l2p_set(dev, lba, new_addr);
 		} else {
-			ftl_invalidate_addr(dev, new_addr);
+			ftl_nv_cache_clear_addr(dev, new_addr);
 		}
-		ftl_invalidate_addr(dev, old_addr);
+		ftl_nv_cache_clear_addr(dev, old_addr);
 	}
 }
 

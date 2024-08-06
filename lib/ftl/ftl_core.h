@@ -309,9 +309,15 @@ ftl_get_next_seq_id(struct spdk_ftl_dev *dev)
 }
 
 static inline uint64_t
-ftl_get_next_timestamp(struct spdk_ftl_dev *dev)
+ftl_get_timestamp(struct spdk_ftl_dev *dev)
 {
-	return ++dev->sb->header.timestamp;
+	return dev->sb->header.timestamp;
+}
+
+static inline void
+ftl_increase_timestamp(struct spdk_ftl_dev *dev, uint64_t num_blocks)
+{
+	dev->sb->header.timestamp += num_blocks;
 }
 
 static inline size_t

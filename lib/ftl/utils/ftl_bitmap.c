@@ -203,8 +203,9 @@ ftl_bitmap_count_set_range(struct ftl_bitmap *bitmap, uint64_t start_bit,
 	count += __builtin_popcountl(*word & (~0UL << (start_bit & FTL_BITMAP_WORD_MASK)));
 
 	end = spdk_min((end_bit >> FTL_BITMAP_WORD_SHIFT) + 1, bitmap->size);
-	for (i= i + 1; i < end; i++, word++) {
+	for (i= i + 1; i < end; i++) {
 		// SPDK_NOTICELOG("PRIu32\n", word);
+		word = bitmap->buf+i;
 		count += __builtin_popcountl(*word);
 	}
 	return count;

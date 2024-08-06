@@ -75,6 +75,14 @@ struct ftl_nv_cache_chunk_md {
 	/* Sequence ID when chunk was closed */
 	uint64_t close_seq_id;
 
+	uint64_t timestamp;
+
+	uint64_t close_timestamp;
+
+	uint64_t last_invalid_timestamp;
+
+	uint8_t  tag;
+
 	/* Current lba to write */
 	uint32_t write_pointer;
 
@@ -96,8 +104,10 @@ struct ftl_nv_cache_chunk_md {
 	/* CRC32 checksum of the associated P2L map when chunk is in closed state */
 	uint32_t p2l_map_checksum;
 
+	uint64_t valid_count;
+
 	/* Reserved */
-	uint8_t reserved[4044];
+	uint8_t reserved[4011];
 } __attribute__((packed));
 
 SPDK_STATIC_ASSERT(sizeof(struct ftl_nv_cache_chunk_md) == FTL_BLOCK_SIZE,
@@ -243,6 +253,15 @@ struct ftl_nv_cache {
 		uint64_t blocks_submitted;
 		uint64_t blocks_submitted_limit;
 	} throttle;
+
+	uint64_t *lba_timestamp_table;
+
+#define FTL_NV_CACHE_SEPBIT_PERIOD 16
+	struct {
+		uint64_t threshold;
+		uint64_t threshold_total;
+		uint8_t  count;
+	} sepbit_info;
 };
 
 typedef void (*nvc_scrub_cb)(struct spdk_ftl_dev *dev, void *cb_ctx, int status);
@@ -263,6 +282,8 @@ void ftl_chunk_map_set_lba(struct ftl_nv_cache_chunk *chunk,
 uint64_t ftl_chunk_map_get_lba(struct ftl_nv_cache_chunk *chunk, uint64_t offset);
 
 void ftl_nv_cache_set_addr(struct spdk_ftl_dev *dev, uint64_t lba, ftl_addr addr);
+
+void ftl_nv_cache_clear_addr(struct spdk_ftl_dev *dev, ftl_addr addr);
 
 int ftl_nv_cache_save_state(struct ftl_nv_cache *nv_cache);
 

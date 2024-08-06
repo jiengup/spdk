@@ -51,20 +51,15 @@ struct ftl_nv_cache_device_ops {
 	 */
 	bool (*is_chunk_active)(struct spdk_ftl_dev *dev, uint64_t chunk_offset);
 
-	/**
-	 * @brief Retrieves the user I/O tag associated with a logical block address (LBA) on the FTL device.
-	 *
-	 * This function is used to get the user I/O tag for a given LBA on the FTL device. The user I/O tag is a unique identifier
-	 * associated with each I/O operation issued by the user. It can be used to track and correlate I/O operations with their
-	 * corresponding LBAs.
-	 *
-	 * @param dev The FTL device structure.
-	 * @param lba The logical block address (LBA) for which to retrieve the user I/O tag.
-	 * @return The user I/O tag associated with the specified LBA.
-	 */
-	uint32_t (*get_user_io_tag)(struct spdk_ftl_dev *dev, uint64_t lba);
+	void (*algo_info_init)(struct ftl_nv_cache *nv_cache);
+	
+	void (*algo_info_update)(struct ftl_nv_cache *nv_cache, struct ftl_nv_cache_chunk *chunk);
 
-	uint32_t (*get_group_tag_for_compaction)(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
+	uint8_t (*get_user_io_tag)(struct spdk_ftl_dev *dev, struct ftl_io *io);
+
+	uint8_t (*get_group_tag_for_compaction)(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
+
+	struct ftl_nv_cache_chunk* (*choose_chunk_for_compaction)(struct ftl_nv_cache *nv_cache);
 
 	struct ftl_md_layout_ops md_layout_ops;
 };

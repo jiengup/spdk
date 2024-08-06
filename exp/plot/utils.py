@@ -115,7 +115,7 @@ def extract_fio(result_f):
         print(f"cant search latency: {lat_line}")
     return int(iops), bw, latency
 
-def dump_core_log(filename: str):
+def dump_core_log(filename: str, section=3):
     log_parent = pathlib.Path(filename).parent
     log_name = pathlib.Path(filename).stem
     core_log_path = log_parent / f"{log_name}_core.log"
@@ -125,7 +125,7 @@ def dump_core_log(filename: str):
     for line in in_f.readlines():
         if "[STAT_OP] Stats after reset." in line:
             reset_cnt += 1
-        if reset_cnt == 3:
+        if reset_cnt == section:
             out_f.write(line)
     out_f.close()
     in_f.close()
