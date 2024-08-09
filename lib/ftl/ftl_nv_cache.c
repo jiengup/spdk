@@ -261,6 +261,8 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 													 100);
 	assert(nv_cache->max_open_chunks <= nv_cache->chunk_count);
 	FTL_NOTICELOG(dev, "NV cache max open chunks: %"PRIu64"\n", nv_cache->max_open_chunks);
+	FTL_NOTICELOG(dev, "Bdev num lbas: %"PRIu64"\n", dev->num_lbas);
+
 
 	/* Allocate chunks */
 	nv_cache->chunks = calloc(nv_cache->chunk_count,
@@ -1551,12 +1553,10 @@ ftl_nv_cache_submit_cb(struct spdk_bdev_io *bdev_io, bool success, void *cb_arg)
 
 	ftl_stats_bdev_io_completed(io->dev, FTL_STATS_TYPE_USER, bdev_io);
 
-	/* 
-	SPDK_NOTICELOG("[SUCCESS] Finnaly LBA %"PRIu64" writing to NV cache addres [timestamp/ck_id/offset/tag] \
+	/* SPDK_NOTICELOG("[SUCCESS] Finnaly LBA %"PRIu64" writing to NV cache addres [timestamp/ck_id/offset/tag] \
 				   %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu32", written blocks %"PRIu64"\n", \
 	 			   io->lba, md->nv_cache.timestamp, io->nv_cache_chunk->idx, \
-				   io->chunk_offset, io->tag, io->num_blocks);
-	*/
+				   io->chunk_offset, io->tag, io->num_blocks);*/
 
 	spdk_bdev_free_io(bdev_io);
 

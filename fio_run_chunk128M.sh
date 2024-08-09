@@ -12,7 +12,7 @@ do
 
         for dist in zipf:0.8
         do
-            res_dir=/data/guntherxing/ftl_result_0805/${algo}_${cc}_${dist}
+            res_dir=/data/guntherxing/ftl_result_0807_2/${algo}_${cc}_${dist}
             if [ ! -d "$res_dir" ]; then
                 mkdir -p "$res_dir"
                 echo "Directory created: $res_dir"
@@ -38,5 +38,3 @@ do
         done
     done
 done
-
-

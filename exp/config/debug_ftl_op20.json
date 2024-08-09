@@ -109,7 +109,7 @@
             "params": {
               "base_bdev": "Nvme0n1",
               "split_count": 1,
-              "split_size_mb": 51200
+              "split_size_mb": 1405400
             }
           },
           {
@@ -117,7 +117,7 @@
             "params": {
               "base_bdev": "Nvme1n1",
               "split_count": 1,
-              "split_size_mb": 51200
+              "split_size_mb": 1405400
             }
           },
           {
