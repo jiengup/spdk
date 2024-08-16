@@ -85,12 +85,12 @@ def extract_overall_waf(filename: str):
             print(f"cant search waf: {line}")
     return wafs, wafs[-1]
 
-def extract_fio(result_f):
+def extract_fio(result_f, jobname="job1"):
     with open(result_f, "r") as f:
         lines = f.readlines()
         for idx, line in enumerate(lines):
             line = line.strip()
-            if line.startswith("job1: (groupid="):
+            if line.startswith(f"{jobname}: (groupid="):
                 stat_line = lines[idx+1]
                 lat_line = lines[idx+4]
                 break

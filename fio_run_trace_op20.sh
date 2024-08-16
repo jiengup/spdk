@@ -5,12 +5,12 @@ chunk_blocks=$((chunk_mb * 1024 * 1024 / 4096))
 
 scl enable devtoolset-8 "SPDK_FTL_ZONE_EMU_BLOCKS=${chunk_blocks} make -j64"
 
-for algo in sepbit mida single_group
+for algo in sepgc
 do
-    for cc in cb greedy
+    for cc in cb
     do
 
-        res_dir=/data/guntherxing/ftl_result_0808/trace_${algo}_${cc}
+        res_dir=/data/guntherxing/ftl_result_0811/trace_${algo}_${cc}
         if [ ! -d "$res_dir" ]; then
             mkdir -p "$res_dir"
             echo "Directory created: $res_dir"

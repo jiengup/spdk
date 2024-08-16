@@ -46,3 +46,4 @@ test/common/build_config.sh
 .spdk-isal-crypto.log
 exp/job/*/*.job
 exp/result/*
+exp/plot/*/

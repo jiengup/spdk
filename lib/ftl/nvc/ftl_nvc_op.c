@@ -393,7 +393,7 @@ costbenefit_choose_chunk_for_compaction(struct ftl_nv_cache *nv_cache)
 		if (garbage == nv_cache->chunk_blocks - nv_cache->tail_md_chunk_blocks)
 			return nchunk;
 		double gp = (double)garbage / (double)(nv_cache->chunk_blocks - nv_cache->tail_md_chunk_blocks);
-		double benefit = (gp / (1-gp)) * (double)age;
+		double benefit = (gp * gp / (1-gp)) * (double)age;
 		if (benefit > max_benefit) {
 			max_benefit = benefit;
 			best_chunk = nchunk;
