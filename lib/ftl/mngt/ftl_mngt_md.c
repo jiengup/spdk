@@ -402,7 +402,7 @@ ftl_mngt_init_default_sb(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt
 
 	/* md layout isn't initialized yet.
 	 * empty region list => all regions in the default location */
-	spdk_strcpy_pad(sb->base_dev_name, dev->base_type->name,
+	spdk_strcpy_pad(sb->base_dev_name, dev->nv_cache.nvc_type->name,
 			SPDK_COUNTOF(sb->base_dev_name), '\0');
 	sb->md_layout_base.df_id = FTL_DF_OBJ_ID_INVALID;
 

@@ -176,6 +176,8 @@ ftl_mngt_open_cache_bdev(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt
 	struct ftl_nv_cache *nv_cache = &dev->nv_cache;
 	const char *bdev_name = dev->conf.cache_bdev;
 	const struct ftl_md_layout_ops *md_ops;
+	uint32_t block_size;
+	uint64_t num_blocks;
 
 	if (spdk_bdev_open_ext(bdev_name, true, nv_cache_bdev_event_cb, dev,
 			       &nv_cache->bdev_desc)) {
@@ -195,9 +197,18 @@ ftl_mngt_open_cache_bdev(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt
 
 	FTL_NOTICELOG(dev, "Using %s as write buffer cache\n", spdk_bdev_get_name(bdev));
 
-	if (spdk_bdev_get_block_size(bdev) != FTL_BLOCK_SIZE) {
-		FTL_ERRLOG(dev, "Unsupported block size (%d)\n",
-			   spdk_bdev_get_block_size(bdev));
+	block_size = spdk_bdev_get_block_size(bdev);
+
+	if (block_size != FTL_BLOCK_SIZE) {
+		FTL_ERRLOG(dev, "Unsupported block size (%"PRIu32")\n", block_size);
+		goto error;
+	}
+
+	num_blocks = spdk_bdev_get_num_blocks(bdev);
+	
+	if (block_size * num_blocks < MINIMUM_BASE_SIZE_GIB * GiB) {
+		FTL_ERRLOG(dev, "Bdev %s is too small, requires, at least %uGiB capacity\n",
+			   spdk_bdev_get_name(bdev), MINIMUM_BASE_SIZE_GIB);
 		goto error;
 	}
 
@@ -207,11 +218,6 @@ ftl_mngt_open_cache_bdev(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt
 		goto error;
 	}
 
-	if (bdev->blockcnt * bdev->blocklen < MINIMUM_CACHE_SIZE_GIB * GiB) {
-		FTL_ERRLOG(dev, "Bdev %s is too small, requires, at least %uGiB capacity\n",
-			   spdk_bdev_get_name(bdev), MINIMUM_CACHE_SIZE_GIB);
-		goto error;
-	}
 	nv_cache->md_size = spdk_bdev_get_md_size(bdev);
 
 	nv_cache->nvc_type = ftl_nv_cache_device_get_type_by_bdev(dev, bdev);
@@ -219,7 +225,7 @@ ftl_mngt_open_cache_bdev(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt
 		FTL_ERRLOG(dev, "Failed to get NV Cache device type\n");
 		goto error;
 	}
-	// nv_cache->md_size = sizeof(union ftl_md_vss);
+	nv_cache->md_size = sizeof(union ftl_md_vss);
 
 	md_ops = &nv_cache->nvc_type->ops.md_layout_ops;
 	if (!md_ops->region_create) {
@@ -232,6 +238,11 @@ ftl_mngt_open_cache_bdev(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt
 		FTL_ERRLOG(dev, "Failed to instantiate layout tracker for nvc device\n");
 		goto error;
 	}
+
+	// TODO(fix)
+	dev->xfer_size = ftl_get_write_unit_size(bdev);
+	
+	dev->num_blocks_in_band = ftl_calculate_num_blocks_in_band(nv_cache->bdev_desc);
 
 	FTL_NOTICELOG(dev, "Using %s as NV Cache device\n", nv_cache->nvc_type->name);
 	ftl_mngt_next_step(mngt);

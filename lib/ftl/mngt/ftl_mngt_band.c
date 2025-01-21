@@ -43,11 +43,12 @@ ftl_band_init_md(struct ftl_band *band)
 static int
 ftl_dev_init_bands(struct spdk_ftl_dev *dev)
 {
-	struct ftl_band *band;
-	uint64_t i, blocks, md_blocks, md_bands;
+	// struct ftl_band *band;
+	uint64_t blocks, md_blocks, md_bands;
 
 	/* Calculate initial number of bands */
-	blocks = spdk_bdev_get_num_blocks(spdk_bdev_desc_get_bdev(dev->base_bdev_desc));
+	blocks = spdk_bdev_get_num_blocks(spdk_bdev_desc_get_bdev(dev->nv_cache.bdev_desc));
+	// TODO(fix)
 	dev->num_bands = blocks / ftl_get_num_blocks_in_band(dev);
 
 	/* Calculate number of bands considering base device metadata size requirement */
@@ -56,29 +57,30 @@ ftl_dev_init_bands(struct spdk_ftl_dev *dev)
 
 	if (dev->num_bands > md_bands) {
 		/* Save a band worth of space for metadata */
+		// TODO(fix)
 		dev->num_bands -= md_bands;
 	} else {
 		FTL_ERRLOG(dev, "Base device too small to store metadata\n");
 		return -1;
 	}
 
-	TAILQ_INIT(&dev->free_bands);
-	TAILQ_INIT(&dev->shut_bands);
+	// TAILQ_INIT(&dev->free_bands);
+	// TAILQ_INIT(&dev->shut_bands);
 
-	dev->num_free = 0;
-	dev->bands = calloc(ftl_get_num_bands(dev), sizeof(*dev->bands));
-	if (!dev->bands) {
-		return -ENOMEM;
-	}
+	// dev->num_free = 0;
+	// dev->bands = calloc(ftl_get_num_bands(dev), sizeof(*dev->bands));
+	// if (!dev->bands) {
+	// 	return -ENOMEM;
+	// }
 
-	for (i = 0; i < ftl_get_num_bands(dev); ++i) {
-		band = &dev->bands[i];
-		band->id = i;
-		band->dev = dev;
+	// for (i = 0; i < ftl_get_num_bands(dev); ++i) {
+	// 	band = &dev->bands[i];
+	// 	band->id = i;
+	// 	band->dev = dev;
 
-		/* Adding to shut_bands is necessary - see ftl_restore_band_close_cb() */
-		TAILQ_INSERT_TAIL(&dev->shut_bands, band, queue_entry);
-	}
+	// 	/* Adding to shut_bands is necessary - see ftl_restore_band_close_cb() */
+	// 	TAILQ_INSERT_TAIL(&dev->shut_bands, band, queue_entry);
+	// }
 
 	return 0;
 }

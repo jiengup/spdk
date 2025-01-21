@@ -56,21 +56,21 @@ static const struct ftl_mngt_process_desc desc_startup = {
 			.action = ftl_mngt_open_cache_bdev,
 			.cleanup = ftl_mngt_close_cache_bdev
 		},
-		// {
-		// 	.name = "Initialize superblock",
-		// 	.action = ftl_mngt_superblock_init,
-		// 	.cleanup = ftl_mngt_superblock_deinit
-		// },
-		// {
-		// 	.name = "Initialize memory pools",
-		// 	.action = ftl_mngt_init_mem_pools,
-		// 	.cleanup = ftl_mngt_deinit_mem_pools
-		// },
-		// {
-		// 	.name = "Initialize bands",
-		// 	.action = ftl_mngt_init_bands,
-		// 	.cleanup = ftl_mngt_deinit_bands
-		// },
+		{
+			.name = "Initialize superblock",
+			.action = ftl_mngt_superblock_init,
+			.cleanup = ftl_mngt_superblock_deinit
+		},
+		{
+			.name = "Initialize memory pools",
+			.action = ftl_mngt_init_mem_pools,
+			.cleanup = ftl_mngt_deinit_mem_pools
+		},
+		{
+			.name = "Initialize bands",
+			.action = ftl_mngt_init_bands,
+			.cleanup = ftl_mngt_deinit_bands
+		},
 		{
 			.name = "Register IO device",
 			.action = ftl_mngt_register_io_device,
@@ -85,10 +85,10 @@ static const struct ftl_mngt_process_desc desc_startup = {
 		// 	.name = "Decorate bands",
 		// 	.action = ftl_mngt_decorate_bands
 		// },
-		// {
-		// 	.name = "Initialize layout",
-		// 	.action = ftl_mngt_init_layout
-		// },
+		{
+			.name = "Initialize layout",
+			.action = ftl_mngt_init_layout
+		},
 		// {
 		// 	.name = "Verify layout",
 		// 	.action = ftl_mngt_layout_verify,

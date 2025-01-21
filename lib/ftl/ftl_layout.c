@@ -38,7 +38,8 @@ blocks2mib(uint64_t blocks)
 static uint64_t
 superblock_region_size(struct spdk_ftl_dev *dev)
 {
-	const struct spdk_bdev *bdev = spdk_bdev_desc_get_bdev(dev->base_bdev_desc);
+	// const struct spdk_bdev *bdev = spdk_bdev_desc_get_bdev(dev->base_bdev_desc);
+	const struct spdk_bdev *bdev = spdk_bdev_desc_get_bdev(dev->nv_cache.bdev_desc);
 	uint64_t wus = spdk_bdev_get_write_unit_size(bdev) * FTL_BLOCK_SIZE;
 
 	if (wus > FTL_SUPERBLOCK_SIZE) {
@@ -639,8 +640,8 @@ ftl_layout_setup(struct spdk_ftl_dev *dev)
 	layout->nvc.chunk_count = layout->nvc.total_blocks / ftl_get_num_blocks_in_band(dev);
 	layout->nvc.chunk_tail_md_num_blocks = ftl_nv_cache_chunk_tail_md_num_blocks(&dev->nv_cache);
 
-	layout->base.num_usable_blocks = ftl_get_num_blocks_in_band(dev);
-	layout->base.user_blocks = ftl_band_user_blocks(dev->bands);
+	// layout->base.num_usable_blocks = ftl_get_num_blocks_in_band(dev);
+	// layout->base.user_blocks = ftl_band_user_blocks(dev->bands);
 
 	switch (setup_mode) {
 	case FTL_LAYOUT_SETUP_MODE_LEGACY_DEFAULT:
@@ -690,12 +691,12 @@ ftl_layout_setup_superblock(struct spdk_ftl_dev *dev)
 	const struct spdk_bdev *bdev;
 	struct ftl_layout *layout = &dev->layout;
 	struct ftl_layout_region *region = &layout->region[FTL_LAYOUT_REGION_TYPE_SB];
-	uint64_t total_blocks, offset, left;
+	// uint64_t total_blocks, offset, left;
 
 	assert(layout->md[FTL_LAYOUT_REGION_TYPE_SB] == NULL);
 
-	bdev = spdk_bdev_desc_get_bdev(dev->base_bdev_desc);
-	layout->base.total_blocks = spdk_bdev_get_num_blocks(bdev);
+	// bdev = spdk_bdev_desc_get_bdev(dev->base_bdev_desc);
+	// layout->base.total_blocks = spdk_bdev_get_num_blocks(bdev);
 
 	bdev = spdk_bdev_desc_get_bdev(dev->nv_cache.bdev_desc);
 	layout->nvc.total_blocks = spdk_bdev_get_num_blocks(bdev);
@@ -711,25 +712,25 @@ ftl_layout_setup_superblock(struct spdk_ftl_dev *dev)
 	assert(region->ioch != NULL);
 	assert(region->current.offset == 0);
 
-	if (layout_region_create_base(dev, FTL_LAYOUT_REGION_TYPE_SB_BASE, FTL_SB_VERSION_CURRENT,
-				      superblock_region_size(dev), 1)) {
-		FTL_ERRLOG(dev, "Error when setting up secondary super block\n");
-		return -1;
-	}
-	layout->region[FTL_LAYOUT_REGION_TYPE_SB].mirror_type = FTL_LAYOUT_REGION_TYPE_SB_BASE;
+	// if (layout_region_create_base(dev, FTL_LAYOUT_REGION_TYPE_SB_BASE, FTL_SB_VERSION_CURRENT,
+	// 			      superblock_region_size(dev), 1)) {
+	// 	FTL_ERRLOG(dev, "Error when setting up secondary super block\n");
+	// 	return -1;
+	// }
+	// layout->region[FTL_LAYOUT_REGION_TYPE_SB].mirror_type = FTL_LAYOUT_REGION_TYPE_SB_BASE;
 
-	region = &layout->region[FTL_LAYOUT_REGION_TYPE_SB_BASE];
-	assert(region->current.offset == 0);
+	// region = &layout->region[FTL_LAYOUT_REGION_TYPE_SB_BASE];
+	// assert(region->current.offset == 0);
 
 	/* Check if SB can be stored at the end of base device */
-	total_blocks = spdk_bdev_get_num_blocks(
-			       spdk_bdev_desc_get_bdev(dev->base_bdev_desc));
-	offset = region->current.offset + region->current.blocks;
-	left = total_blocks - offset;
-	if ((left > total_blocks) || (offset > total_blocks)) {
-		FTL_ERRLOG(dev, "Error when setup base device super block\n");
-		return -1;
-	}
+	// total_blocks = spdk_bdev_get_num_blocks(
+	// 		       spdk_bdev_desc_get_bdev(dev->base_bdev_desc));
+	// offset = region->current.offset + region->current.blocks;
+	// left = total_blocks - offset;
+	// if ((left > total_blocks) || (offset > total_blocks)) {
+	// 	FTL_ERRLOG(dev, "Error when setup base device super block\n");
+	// 	return -1;
+	// }
 
 	return 0;
 }
@@ -777,8 +778,8 @@ ftl_layout_base_md_blocks(struct spdk_ftl_dev *dev)
 	const struct spdk_bdev *bdev;
 	uint64_t md_blocks = 0, total_blocks = 0;
 
-	bdev = spdk_bdev_desc_get_bdev(dev->base_bdev_desc);
-	total_blocks += spdk_bdev_get_num_blocks(bdev);
+	// bdev = spdk_bdev_desc_get_bdev(dev->base_bdev_desc);
+	// total_blocks += spdk_bdev_get_num_blocks(bdev);
 
 	bdev = spdk_bdev_desc_get_bdev(dev->nv_cache.bdev_desc);
 	total_blocks += spdk_bdev_get_num_blocks(bdev);

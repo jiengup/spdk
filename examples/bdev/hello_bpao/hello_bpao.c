@@ -15,32 +15,6 @@
 
 
 static char *g_bdev_name = "Malloc0";
-struct spdk_ftl_conf default_conf = {
-	.name = "bpao",
-	.cache_bdev = "znsn1",
-	/* 2 free bands - compaction is blocked, gc only */
-	.limits[SPDK_FTL_LIMIT_CRIT]	= 2,
-	/* 3 free bands */
-	.limits[SPDK_FTL_LIMIT_HIGH]	= 3,
-	/* 4 free bands */
-	.limits[SPDK_FTL_LIMIT_LOW]	= 4,
-	/* 5 free bands - gc starts running */
-	.limits[SPDK_FTL_LIMIT_START]	= 5,
-	/* 20% spare blocks */
-	.overprovisioning = 20,
-	/* 2GiB of DRAM for l2p cache */
-	.l2p_dram_limit = 2048,
-	/* IO pool size per user thread (this should be adjusted to thread IO qdepth) */
-	.user_io_pool_size = 2048,
-	.group_num = 1,
-	.nv_cache = {
-		.chunk_compaction_threshold = 99,
-		.chunk_free_target = 5,
-	},
-	.algo = "single_group_greedy",
-	.fast_shutdown = true,
-};
-
 /*
  * We'll use this struct to gather housekeeping hello_context to pass between
  * our events and callbacks.
@@ -252,7 +226,8 @@ hello_start(void *arg1)
 	struct spdk_ftl_conf conf;
 	spdk_ftl_get_default_conf(&conf, sizeof(struct spdk_ftl_conf));
 	conf.name = "bpao";
-	conf.cache_bdev = "znsn1";
+	conf.cache_bdev = "nvme1n1";
+	conf.mode |= SPDK_FTL_MODE_CREATE;
 
 	spdk_ftl_dev_init(&conf, NULL, NULL);
 
@@ -273,7 +248,7 @@ main(int argc, char **argv)
 	spdk_app_opts_init(&opts, sizeof(opts));
 	opts.name = "hello_bdev";
 	opts.rpc_addr = NULL;
-	opts.json_config_file = "/home/xgj/spdk-configs/zns_nvme_bdev.json";
+	opts.json_config_file = "/dataset/spdk_config/nvme_ssd.json";
 
 	/*
 	 * Parse built-in SPDK command line parameters as well

@@ -47,4 +47,6 @@ test/common/build_config.sh
 exp/job/*/*.job
 exp/result/*
 exp/plot/*/
-compile_commands
+compile_commands.json
+.cache
+*core*
