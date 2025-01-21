@@ -237,8 +237,6 @@ bdev_ftl_write_config_json(struct spdk_bdev *bdev, struct spdk_json_write_ctx *w
 
 	spdk_json_write_named_bool(w, "fast_shutdown", conf.fast_shutdown);
 
-	spdk_json_write_named_string(w, "base_bdev", conf.base_bdev);
-
 	if (conf.cache_bdev) {
 		spdk_json_write_named_string(w, "cache", conf.cache_bdev);
 	}
@@ -258,8 +256,6 @@ bdev_ftl_dump_info_json(void *ctx, struct spdk_json_write_ctx *w)
 	spdk_ftl_dev_get_conf(ftl_bdev->dev, &conf, sizeof(conf));
 
 	spdk_json_write_named_object_begin(w, "ftl");
-
-	spdk_json_write_named_string(w, "base_bdev", conf.base_bdev);
 
 	if (conf.cache_bdev) {
 		spdk_json_write_named_string(w, "cache", conf.cache_bdev);
@@ -403,30 +399,20 @@ int
 bdev_ftl_create_bdev(const struct spdk_ftl_conf *conf, ftl_bdev_init_fn cb, void *cb_arg)
 {
 	struct ftl_bdev *ftl_bdev;
-	struct spdk_bdev_desc *base_bdev_desc, *cache_bdev_desc;
+	struct spdk_bdev_desc *cache_bdev_desc;
 	int rc;
 
-	rc = spdk_bdev_open_ext(conf->base_bdev, false, bdev_ftl_create_bdev_event_cb, NULL,
-				&base_bdev_desc);
-	if (rc) {
-		return rc;
-	}
 	rc = spdk_bdev_open_ext(conf->cache_bdev, false, bdev_ftl_create_bdev_event_cb, NULL,
 				&cache_bdev_desc);
-	if (rc) {
-		spdk_bdev_close(base_bdev_desc);
-		return rc;
-	}
 
 	ftl_bdev = calloc(1, sizeof(*ftl_bdev));
 	if (!ftl_bdev) {
 		SPDK_ERRLOG("Could not allocate ftl_bdev\n");
-		spdk_bdev_close(base_bdev_desc);
 		spdk_bdev_close(cache_bdev_desc);
 		return -ENOMEM;
 	}
 
-	ftl_bdev->base_bdev_desc = base_bdev_desc;
+	ftl_bdev->base_bdev_desc = NULL;
 	ftl_bdev->cache_bdev_desc = cache_bdev_desc;
 
 	ftl_bdev->bdev.name = strdup(conf->name);

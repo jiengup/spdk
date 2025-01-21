@@ -2306,7 +2306,6 @@ Format: 'user:u1 secret:s1 muser:mu1 msecret:ms1,user:u2 secret:s2 muser:mu2 mse
     def bdev_ftl_create(args):
         print_dict(rpc.bdev.bdev_ftl_create(args.client,
                                             name=args.name,
-                                            base_bdev=args.base_bdev,
                                             uuid=args.uuid,
                                             cache=args.cache,
                                             overprovisioning=args.overprovisioning,
@@ -2318,8 +2317,6 @@ Format: 'user:u1 secret:s1 muser:mu1 msecret:ms1,user:u2 secret:s2 muser:mu2 mse
 
     p = subparsers.add_parser('bdev_ftl_create', help='Add FTL bdev')
     p.add_argument('-b', '--name', help="Name of the bdev", required=True)
-    p.add_argument('-d', '--base-bdev', help='Name of bdev used as underlying device',
-                   required=True)
     p.add_argument('-u', '--uuid', help='UUID of restored bdev (not applicable when creating new '
                    'instance): e.g. b286d19a-0059-4709-abcd-9f7732b1567d (optional)')
     p.add_argument('-c', '--cache', help='Name of the bdev to be used as a write buffer cache',

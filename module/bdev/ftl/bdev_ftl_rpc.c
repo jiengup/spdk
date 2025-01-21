@@ -35,7 +35,6 @@ static const struct spdk_json_object_decoder rpc_ftl_basic_decoders[] = {
 
 static const struct spdk_json_object_decoder rpc_bdev_ftl_create_decoders[] = {
 	{"name", offsetof(struct spdk_ftl_conf, name), spdk_json_decode_string},
-	{"base_bdev", offsetof(struct spdk_ftl_conf, base_bdev), spdk_json_decode_string},
 	{"uuid", offsetof(struct spdk_ftl_conf, uuid), spdk_json_decode_uuid, true},
 	{"cache", offsetof(struct spdk_ftl_conf, cache_bdev), spdk_json_decode_string},
 	{"algo", offsetof(struct spdk_ftl_conf, algo), spdk_json_decode_string},

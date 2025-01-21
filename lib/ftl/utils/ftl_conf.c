@@ -29,6 +29,7 @@ struct spdk_ftl_conf g_default_conf = {
 		.chunk_compaction_threshold = 99,
 		.chunk_free_target = 5,
 	},
+	.algo = "single_group_greedy",
 	.fast_shutdown = true,
 };
 
@@ -76,12 +77,6 @@ spdk_ftl_conf_copy(struct spdk_ftl_conf *dst, const struct spdk_ftl_conf *src)
 			goto error;
 		}
 	}
-	if (src->base_bdev) {
-		base_bdev = strdup(src->base_bdev);
-		if (!base_bdev) {
-			goto error;
-		}
-	}
 	if (src->cache_bdev) {
 		cache_bdev = strdup(src->cache_bdev);
 		if (!cache_bdev) {
@@ -98,7 +93,6 @@ spdk_ftl_conf_copy(struct spdk_ftl_conf *dst, const struct spdk_ftl_conf *src)
 
 	dst->name = name;
 	dst->core_mask = core_mask;
-	dst->base_bdev = base_bdev;
 	dst->cache_bdev = cache_bdev;
 	dst->algo = algo;
 	return 0;
@@ -116,7 +110,6 @@ spdk_ftl_conf_deinit(struct spdk_ftl_conf *conf)
 {
 	free(conf->name);
 	free(conf->core_mask);
-	free(conf->base_bdev);
 	free(conf->cache_bdev);
 	free(conf->algo);
 }
@@ -133,10 +126,6 @@ ftl_conf_init_dev(struct spdk_ftl_dev *dev, const struct spdk_ftl_conf *conf)
 
 	if (!conf->name) {
 		FTL_ERRLOG(dev, "No FTL name in configuration\n");
-		return -EINVAL;
-	}
-	if (!conf->base_bdev) {
-		FTL_ERRLOG(dev, "No base device in configuration\n");
 		return -EINVAL;
 	}
 	if (!conf->cache_bdev) {

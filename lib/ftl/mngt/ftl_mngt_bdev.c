@@ -50,7 +50,7 @@ ftl_mngt_open_base_bdev(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
 {
 	uint32_t block_size;
 	uint64_t num_blocks;
-	const char *bdev_name = dev->conf.base_bdev;
+	const char *bdev_name = NULL;
 	struct spdk_bdev *bdev;
 
 	if (spdk_bdev_open_ext(bdev_name, true, base_bdev_event_cb,
@@ -219,7 +219,7 @@ ftl_mngt_open_cache_bdev(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt
 		FTL_ERRLOG(dev, "Failed to get NV Cache device type\n");
 		goto error;
 	}
-	nv_cache->md_size = sizeof(union ftl_md_vss);
+	// nv_cache->md_size = sizeof(union ftl_md_vss);
 
 	md_ops = &nv_cache->nvc_type->ops.md_layout_ops;
 	if (!md_ops->region_create) {

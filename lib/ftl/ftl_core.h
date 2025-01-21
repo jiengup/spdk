@@ -151,6 +151,7 @@ struct spdk_ftl_dev {
 	/* IO channel to the FTL device, used for internal management operations
 	 * consuming FTL's external API
 	 */
+	// init at ftl_mngt_init_io_channel()
 	struct spdk_io_channel		*ioch;
 
 	/* Underlying device IO channel */

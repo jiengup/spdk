@@ -129,10 +129,9 @@ struct spdk_ftl_conf {
 	bool					verbose_mode;
 
 	/* Hole at bytes 0x66 - 0x67. */
-	// uint8_t					reserved[2];
+	uint8_t					reserved[8];
 
 	/* Name of base block device (zoned or non-zoned) */
-	char					*base_bdev;
 
 	/* Name of cache block device (must support extended metadata) */
 	char					*cache_bdev;

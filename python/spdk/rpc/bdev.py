@@ -1584,7 +1584,7 @@ def bdev_split_delete(client, base_bdev):
     return client.call('bdev_split_delete', params)
 
 
-def bdev_ftl_create(client, name, base_bdev, cache, **kwargs):
+def bdev_ftl_create(client, name, cache, **kwargs):
     """Construct FTL bdev
 
     Args:
@@ -1594,7 +1594,6 @@ def bdev_ftl_create(client, name, base_bdev, cache, **kwargs):
         kwargs: optional parameters
     """
     params = {'name': name,
-              'base_bdev': base_bdev,
               'cache': cache}
     for key, value in kwargs.items():
         if value is not None:
