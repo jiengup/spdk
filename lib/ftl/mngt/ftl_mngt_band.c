@@ -11,33 +11,34 @@
 static int
 ftl_band_init_md(struct ftl_band *band)
 {
-	struct spdk_ftl_dev *dev = band->dev;
-	struct ftl_p2l_map *p2l_map = &band->p2l_map;
-	struct ftl_md *band_info_md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_BAND_MD];
-	struct ftl_md *valid_map_md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_VALID_MAP];
-	uint64_t band_num_blocks = ftl_get_num_blocks_in_band(band->dev);
-	size_t band_valid_map_bytes;
-	struct ftl_band_md *band_md = ftl_md_get_buffer(band_info_md);
+	ftl_abort();
+	// struct spdk_ftl_dev *dev = band->dev;
+	// struct ftl_p2l_map *p2l_map = &band->p2l_map;
+	// struct ftl_md *band_info_md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_BAND_MD];
+	// struct ftl_md *valid_map_md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_VALID_MAP];
+	// uint64_t band_num_blocks = ftl_get_num_blocks_in_band(band->dev);
+	// size_t band_valid_map_bytes;
+	// struct ftl_band_md *band_md = ftl_md_get_buffer(band_info_md);
 
-	if (band_num_blocks % (ftl_bitmap_buffer_alignment * 8)) {
-		FTL_ERRLOG(dev, "The number of blocks in band is not divisible by bitmap word bits\n");
-		return -EINVAL;
-	}
-	band_valid_map_bytes = band_num_blocks / 8;
+	// if (band_num_blocks % (ftl_bitmap_buffer_alignment * 8)) {
+	// 	FTL_ERRLOG(dev, "The number of blocks in band is not divisible by bitmap word bits\n");
+	// 	return -EINVAL;
+	// }
+	// band_valid_map_bytes = band_num_blocks / 8;
 
-	p2l_map->valid = ftl_bitmap_create(ftl_md_get_buffer(valid_map_md) +
-					   band->start_addr / 8, band_valid_map_bytes);
-	if (!p2l_map->valid) {
-		return -ENOMEM;
-	}
+	// p2l_map->valid = ftl_bitmap_create(ftl_md_get_buffer(valid_map_md) +
+	// 				   band->start_addr / 8, band_valid_map_bytes);
+	// if (!p2l_map->valid) {
+	// 	return -ENOMEM;
+	// }
 
-	band->md = &band_md[band->id];
-	band->md->version = FTL_BAND_VERSION_CURRENT;
-	if (!ftl_fast_startup(dev)) {
-		band->md->df_p2l_map = FTL_DF_OBJ_ID_INVALID;
-	}
+	// band->md = &band_md[band->id];
+	// band->md->version = FTL_BAND_VERSION_CURRENT;
+	// if (!ftl_fast_startup(dev)) {
+	// 	band->md->df_p2l_map = FTL_DF_OBJ_ID_INVALID;
+	// }
 
-	return 0;
+	// return 0;
 }
 
 static int
@@ -219,17 +220,18 @@ ftl_mngt_decorate_bands(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
 void
 ftl_mngt_initialize_band_address(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
 {
-	struct ftl_band *band;
-	struct ftl_md *data_md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_DATA_BASE];
-	uint64_t i;
+	ftl_abort();
+// struct ftl_band *band;
+// struct ftl_md *data_md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_DATA_BASE];
+// uint64_t i;
 
-	for (i = 0; i < ftl_get_num_bands(dev); i++) {
-		band = &dev->bands[i];
-		band->start_addr = data_md->region->current.offset + i * dev->num_blocks_in_band;
-		band->tail_md_addr = ftl_band_tail_md_addr(band);
-	}
+// for (i = 0; i < ftl_get_num_bands(dev); i++) {
+// 	band = &dev->bands[i];
+// 	band->start_addr = data_md->region->current.offset + i * dev->num_blocks_in_band;
+// 	band->tail_md_addr = ftl_band_tail_md_addr(band);
+// }
 
-	ftl_mngt_next_step(mngt);
+// ftl_mngt_next_step(mngt);
 }
 
 void

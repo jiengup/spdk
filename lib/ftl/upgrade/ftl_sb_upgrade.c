@@ -52,8 +52,8 @@ sb_v3_md_region_is_fixed(int reg_type)
 {
 	switch (reg_type) {
 	case FTL_LAYOUT_REGION_TYPE_SB:
-	case FTL_LAYOUT_REGION_TYPE_SB_BASE:
-	case FTL_LAYOUT_REGION_TYPE_DATA_BASE:
+	// case FTL_LAYOUT_REGION_TYPE_SB_BASE:
+	// case FTL_LAYOUT_REGION_TYPE_DATA_BASE:
 		return true;
 
 	default:
@@ -65,10 +65,10 @@ static bool
 sb_v3_md_region_is_nvc(int reg_type)
 {
 	switch (reg_type) {
-	case FTL_LAYOUT_REGION_TYPE_SB_BASE:
-	case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
-	case FTL_LAYOUT_REGION_TYPE_DATA_BASE:
-		return false;
+	// case FTL_LAYOUT_REGION_TYPE_SB_BASE:
+	// case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
+	// case FTL_LAYOUT_REGION_TYPE_DATA_BASE:
+	// 	return false;
 
 	default:
 		return true;

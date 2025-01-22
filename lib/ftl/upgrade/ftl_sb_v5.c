@@ -95,13 +95,13 @@ ftl_superblock_v5_store_blob_area(struct spdk_ftl_dev *dev)
 	}
 
 	/* Store the base dev-backed FTL MD layout info */
-	sb_blob_area += blob_sz;
-	spdk_strcpy_pad(sb->base_dev_name, dev->base_type->name, SPDK_COUNTOF(sb->base_dev_name), '\0');
-	blob_sz = sb_blob_store(dev, &sb->md_layout_base, base_blob_store, sb_blob_area);
-	FTL_NOTICELOG(dev, "base layout blob store 0x%"PRIx64" bytes\n", blob_sz);
-	if (!blob_sz) {
-		return -1;
-	}
+	// sb_blob_area += blob_sz;
+	// spdk_strcpy_pad(sb->base_dev_name, dev->base_type->name, SPDK_COUNTOF(sb->base_dev_name), '\0');
+	// blob_sz = sb_blob_store(dev, &sb->md_layout_base, base_blob_store, sb_blob_area);
+	// FTL_NOTICELOG(dev, "base layout blob store 0x%"PRIx64" bytes\n", blob_sz);
+	// if (!blob_sz) {
+	// 	return -1;
+	// }
 
 	/* Store the region props */
 	sb_blob_area += blob_sz;
@@ -402,7 +402,7 @@ void
 ftl_superblock_v5_md_layout_dump(struct spdk_ftl_dev *dev)
 {
 	struct ftl_layout_tracker_bdev *nvc_layout_tracker = dev->nvc_layout_tracker;
-	struct ftl_layout_tracker_bdev *base_layout_tracker = dev->base_layout_tracker;
+	// struct ftl_layout_tracker_bdev *base_layout_tracker = dev->base_layout_tracker;
 	const struct ftl_layout_tracker_bdev_region_props *reg_search_ctx = NULL;
 
 	FTL_NOTICELOG(dev, "SB metadata layout - nvc:\n");
@@ -419,18 +419,18 @@ ftl_superblock_v5_md_layout_dump(struct spdk_ftl_dev *dev)
 	}
 
 	reg_search_ctx = NULL;
-	FTL_NOTICELOG(dev, "SB metadata layout - base dev:\n");
-	while (true) {
-		ftl_layout_tracker_bdev_find_next_region(base_layout_tracker, FTL_LAYOUT_REGION_TYPE_INVALID,
-				&reg_search_ctx);
-		if (!reg_search_ctx) {
-			break;
-		}
+	// FTL_NOTICELOG(dev, "SB metadata layout - base dev:\n");
+	// while (true) {
+	// 	ftl_layout_tracker_bdev_find_next_region(base_layout_tracker, FTL_LAYOUT_REGION_TYPE_INVALID,
+	// 			&reg_search_ctx);
+	// 	if (!reg_search_ctx) {
+	// 		break;
+	// 	}
 
-		FTL_NOTICELOG(dev,
-			      "Region type:0x%"PRIx32" ver:%"PRIu32" blk_offs:0x%"PRIx64" blk_sz:0x%"PRIx64"\n",
-			      reg_search_ctx->type, reg_search_ctx->ver, reg_search_ctx->blk_offs, reg_search_ctx->blk_sz);
-	}
+	// 	FTL_NOTICELOG(dev,
+	// 		      "Region type:0x%"PRIx32" ver:%"PRIu32" blk_offs:0x%"PRIx64" blk_sz:0x%"PRIx64"\n",
+	// 		      reg_search_ctx->type, reg_search_ctx->ver, reg_search_ctx->blk_offs, reg_search_ctx->blk_sz);
+	// }
 }
 
 static int
@@ -507,69 +507,69 @@ layout_region_verify(struct spdk_ftl_dev *dev, enum ftl_layout_region_type reg_t
 	return 0;
 }
 
-static int
-layout_fixup_reg_data_base(struct spdk_ftl_dev *dev)
-{
-	const struct ftl_md_layout_ops *base_md_ops = &dev->base_type->ops.md_layout_ops;
-	struct ftl_layout_region *reg = &dev->layout.region[FTL_LAYOUT_REGION_TYPE_DATA_BASE];
-	const struct ftl_layout_tracker_bdev_region_props *reg_search_ctx = NULL;
+// static int
+// layout_fixup_reg_data_base(struct spdk_ftl_dev *dev)
+// {
+// 	const struct ftl_md_layout_ops *base_md_ops = &dev->base_type->ops.md_layout_ops;
+// 	struct ftl_layout_region *reg = &dev->layout.region[FTL_LAYOUT_REGION_TYPE_DATA_BASE];
+// 	const struct ftl_layout_tracker_bdev_region_props *reg_search_ctx = NULL;
 
-	assert(reg->type == FTL_LAYOUT_REGION_TYPE_INVALID);
+// 	assert(reg->type == FTL_LAYOUT_REGION_TYPE_INVALID);
 
-	FTL_NOTICELOG(dev, "Adding a region\n");
+// 	FTL_NOTICELOG(dev, "Adding a region\n");
 
-	/* Add the region */
-	if (base_md_ops->region_create(dev, FTL_LAYOUT_REGION_TYPE_DATA_BASE, 0,
-				       ftl_layout_base_offset(dev))) {
-		return -1;
-	}
-	if (base_md_ops->region_open(dev, FTL_LAYOUT_REGION_TYPE_DATA_BASE, 0, FTL_BLOCK_SIZE,
-				     ftl_layout_base_offset(dev), reg)) {
-		return -1;
-	}
+// 	/* Add the region */
+// 	if (base_md_ops->region_create(dev, FTL_LAYOUT_REGION_TYPE_DATA_BASE, 0,
+// 				       ftl_layout_base_offset(dev))) {
+// 		return -1;
+// 	}
+// 	if (base_md_ops->region_open(dev, FTL_LAYOUT_REGION_TYPE_DATA_BASE, 0, FTL_BLOCK_SIZE,
+// 				     ftl_layout_base_offset(dev), reg)) {
+// 		return -1;
+// 	}
 
-	ftl_layout_tracker_bdev_find_next_region(dev->base_layout_tracker, FTL_LAYOUT_REGION_TYPE_DATA_BASE,
-			&reg_search_ctx);
-	assert(reg_search_ctx);
-	return 0;
-}
+// 	ftl_layout_tracker_bdev_find_next_region(dev->base_layout_tracker, FTL_LAYOUT_REGION_TYPE_DATA_BASE,
+// 			&reg_search_ctx);
+// 	assert(reg_search_ctx);
+// 	return 0;
+// }
 
-static int
-layout_fixup_base(struct spdk_ftl_dev *dev)
-{
-	struct ftl_layout_region_descr {
-		enum ftl_layout_region_type type;
-		uint32_t ver;
-		int (*on_reg_miss)(struct spdk_ftl_dev *dev);
-	};
-	struct ftl_layout_region_descr *reg_descr;
-	static struct ftl_layout_region_descr nvc_regs[] = {
-		{ .type = FTL_LAYOUT_REGION_TYPE_SB_BASE, .ver = FTL_SB_VERSION_CURRENT },
-		{ .type = FTL_LAYOUT_REGION_TYPE_DATA_BASE, .ver = 0, .on_reg_miss = layout_fixup_reg_data_base },
-		{ .type = FTL_LAYOUT_REGION_TYPE_VALID_MAP, .ver = 0 },
-		{ .type = FTL_LAYOUT_REGION_TYPE_INVALID, .ver = 0 },
-	};
+// static int
+// layout_fixup_base(struct spdk_ftl_dev *dev)
+// {
+// 	struct ftl_layout_region_descr {
+// 		enum ftl_layout_region_type type;
+// 		uint32_t ver;
+// 		int (*on_reg_miss)(struct spdk_ftl_dev *dev);
+// 	};
+// 	struct ftl_layout_region_descr *reg_descr;
+// 	static struct ftl_layout_region_descr nvc_regs[] = {
+// 		{ .type = FTL_LAYOUT_REGION_TYPE_SB_BASE, .ver = FTL_SB_VERSION_CURRENT },
+// 		{ .type = FTL_LAYOUT_REGION_TYPE_DATA_BASE, .ver = 0, .on_reg_miss = layout_fixup_reg_data_base },
+// 		{ .type = FTL_LAYOUT_REGION_TYPE_VALID_MAP, .ver = 0 },
+// 		{ .type = FTL_LAYOUT_REGION_TYPE_INVALID, .ver = 0 },
+// 	};
 
-	for (reg_descr = nvc_regs; reg_descr->type != FTL_LAYOUT_REGION_TYPE_INVALID; reg_descr++) {
-		struct ftl_layout_region *region;
+// 	for (reg_descr = nvc_regs; reg_descr->type != FTL_LAYOUT_REGION_TYPE_INVALID; reg_descr++) {
+// 		struct ftl_layout_region *region;
 
-		if (layout_region_verify(dev, reg_descr->type) &&
-		    reg_descr->on_reg_miss && reg_descr->on_reg_miss(dev)) {
-			return -1;
-		}
+// 		if (layout_region_verify(dev, reg_descr->type) &&
+// 		    reg_descr->on_reg_miss && reg_descr->on_reg_miss(dev)) {
+// 			return -1;
+// 		}
 
-		region = &dev->layout.region[reg_descr->type];
-		region->type = reg_descr->type;
-		region->mirror_type = FTL_LAYOUT_REGION_TYPE_INVALID;
-		region->name = ftl_md_region_name(reg_descr->type);
+// 		region = &dev->layout.region[reg_descr->type];
+// 		region->type = reg_descr->type;
+// 		region->mirror_type = FTL_LAYOUT_REGION_TYPE_INVALID;
+// 		region->name = ftl_md_region_name(reg_descr->type);
 
-		region->bdev_desc = dev->base_bdev_desc;
-		region->ioch = dev->base_ioch;
-		region->vss_blksz = 0;
-	}
+// 		region->bdev_desc = dev->base_bdev_desc;
+// 		region->ioch = dev->base_ioch;
+// 		region->vss_blksz = 0;
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 
 static int
 layout_fixup_nvc(struct spdk_ftl_dev *dev)
@@ -582,10 +582,11 @@ layout_fixup_nvc(struct spdk_ftl_dev *dev)
 	};
 	struct ftl_layout_region_descr *reg_descr;
 	static struct ftl_layout_region_descr nvc_regs[] = {
-		{ .type = FTL_LAYOUT_REGION_TYPE_SB, .mirror_type = FTL_LAYOUT_REGION_TYPE_SB_BASE },
+		// { .type = FTL_LAYOUT_REGION_TYPE_SB, .mirror_type = FTL_LAYOUT_REGION_TYPE_SB_BASE },
+		{.type = FTL_LAYOUT_REGION_TYPE_SB},
 		{ .type = FTL_LAYOUT_REGION_TYPE_L2P },
-		{ .type = FTL_LAYOUT_REGION_TYPE_BAND_MD, .mirror_type = FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR },
-		{ .type = FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR },
+		// { .type = FTL_LAYOUT_REGION_TYPE_BAND_MD, .mirror_type = FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR },
+		// { .type = FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR },
 		{ .type = FTL_LAYOUT_REGION_TYPE_TRIM_MD, .mirror_type = FTL_LAYOUT_REGION_TYPE_TRIM_MD_MIRROR },
 		{ .type = FTL_LAYOUT_REGION_TYPE_TRIM_MD_MIRROR },
 		{ .type = FTL_LAYOUT_REGION_TYPE_TRIM_LOG, .mirror_type = FTL_LAYOUT_REGION_TYPE_TRIM_LOG_MIRROR },
@@ -640,15 +641,16 @@ layout_fixup_nvc(struct spdk_ftl_dev *dev)
 static int
 filter_region_type_base(enum ftl_layout_region_type reg_type)
 {
-	switch (reg_type) {
-	case FTL_LAYOUT_REGION_TYPE_SB_BASE:
-	case FTL_LAYOUT_REGION_TYPE_DATA_BASE:
-	case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
-		return 0;
+	// switch (reg_type) {
+	// case FTL_LAYOUT_REGION_TYPE_SB_BASE:
+	// case FTL_LAYOUT_REGION_TYPE_DATA_BASE:
+	// case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
+	// 	return 0;
 
-	default:
-		return 1;
-	}
+	// default:
+	// 	return 1;
+	// }
+	return 1;
 }
 
 static int
@@ -667,20 +669,21 @@ layout_apply_nvc(struct spdk_ftl_dev *dev)
 	return 0;
 }
 
-static int
-layout_apply_base(struct spdk_ftl_dev *dev)
-{
-	if (layout_apply_from_sb_blob(dev, dev->base_layout_tracker, filter_region_type_base) ||
-	    layout_fixup_base(dev)) {
-		return -1;
-	}
-	return 0;
-}
+// static int
+// layout_apply_base(struct spdk_ftl_dev *dev)
+// {
+// 	if (layout_apply_from_sb_blob(dev, dev->base_layout_tracker, filter_region_type_base) ||
+// 	    layout_fixup_base(dev)) {
+// 		return -1;
+// 	}
+// 	return 0;
+// }
 
 int
 ftl_superblock_v5_md_layout_apply(struct spdk_ftl_dev *dev)
 {
-	if (layout_apply_nvc(dev) || layout_apply_base(dev)) {
+	// if (layout_apply_nvc(dev) || layout_apply_base(dev)) {
+	if (layout_apply_nvc(dev)) {
 		return -1;
 	}
 	return 0;

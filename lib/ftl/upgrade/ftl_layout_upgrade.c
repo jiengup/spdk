@@ -58,23 +58,23 @@ static struct ftl_layout_upgrade_desc_list layout_upgrade_desc[] = {
 		.count = FTL_SB_VERSION_CURRENT,
 		.desc = sb_upgrade_desc,
 	},
-	[FTL_LAYOUT_REGION_TYPE_SB_BASE] = {
-		.latest_ver = FTL_SB_VERSION_CURRENT,
-		.count = FTL_SB_VERSION_CURRENT,
-		.desc = sb_upgrade_desc,
-	},
+	// [FTL_LAYOUT_REGION_TYPE_SB_BASE] = {
+	// 	.latest_ver = FTL_SB_VERSION_CURRENT,
+	// 	.count = FTL_SB_VERSION_CURRENT,
+	// 	.desc = sb_upgrade_desc,
+	// },
 	[FTL_LAYOUT_REGION_TYPE_L2P] = {},
-	[FTL_LAYOUT_REGION_TYPE_BAND_MD] = {
-		.latest_ver = FTL_BAND_VERSION_CURRENT,
-		.count = FTL_BAND_VERSION_CURRENT,
-		.desc = band_upgrade_desc,
-	},
-	[FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR] = {
-		.latest_ver = FTL_BAND_VERSION_CURRENT,
-		.count = FTL_BAND_VERSION_CURRENT,
-		.desc = band_upgrade_desc,
-	},
-	[FTL_LAYOUT_REGION_TYPE_VALID_MAP] = {},
+	// [FTL_LAYOUT_REGION_TYPE_BAND_MD] = {
+	// 	.latest_ver = FTL_BAND_VERSION_CURRENT,
+	// 	.count = FTL_BAND_VERSION_CURRENT,
+	// 	.desc = band_upgrade_desc,
+	// },
+	// [FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR] = {
+	// 	.latest_ver = FTL_BAND_VERSION_CURRENT,
+	// 	.count = FTL_BAND_VERSION_CURRENT,
+	// 	.desc = band_upgrade_desc,
+	// },
+	// [FTL_LAYOUT_REGION_TYPE_VALID_MAP] = {},
 	[FTL_LAYOUT_REGION_TYPE_NVC_MD] = {
 		.latest_ver = FTL_NVC_VERSION_CURRENT,
 		.count = FTL_NVC_VERSION_CURRENT,
@@ -86,7 +86,7 @@ static struct ftl_layout_upgrade_desc_list layout_upgrade_desc[] = {
 		.desc = nvc_upgrade_desc,
 	},
 	[FTL_LAYOUT_REGION_TYPE_DATA_NVC] = {},
-	[FTL_LAYOUT_REGION_TYPE_DATA_BASE] = {},
+	// [FTL_LAYOUT_REGION_TYPE_DATA_BASE] = {},
 	[FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC] = {
 		.latest_ver = FTL_P2L_VERSION_CURRENT,
 		.count = FTL_P2L_VERSION_CURRENT,
@@ -274,7 +274,7 @@ ftl_superblock_upgrade(struct spdk_ftl_dev *dev)
 	}
 
 	/* The mirror shares the same DMA buf, so it is automatically updated upon SB store */
-	dev->layout.region[FTL_LAYOUT_REGION_TYPE_SB_BASE].current.version = reg->current.version;
+	// dev->layout.region[FTL_LAYOUT_REGION_TYPE_SB_BASE].current.version = reg->current.version;
 	return 0;
 }
 

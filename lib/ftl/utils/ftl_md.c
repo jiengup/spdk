@@ -1132,14 +1132,14 @@ ftl_md_create_region_flags(struct spdk_ftl_dev *dev, int region_type)
 		}
 		break;
 
-	case FTL_LAYOUT_REGION_TYPE_BAND_MD:
+	// case FTL_LAYOUT_REGION_TYPE_BAND_MD:
 	case FTL_LAYOUT_REGION_TYPE_NVC_MD:
 		if (!ftl_fast_startup(dev)) {
 			flags |= FTL_MD_CREATE_SHM_NEW;
 		}
 		break;
-	case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
-	case FTL_LAYOUT_REGION_TYPE_TRIM_MD:
+	// case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
+	// case FTL_LAYOUT_REGION_TYPE_TRIM_MD:
 	case FTL_LAYOUT_REGION_TYPE_TRIM_LOG:
 		if (!ftl_fast_startup(dev) && !ftl_fast_recovery(dev)) {
 			flags |= FTL_MD_CREATE_SHM_NEW;
@@ -1162,8 +1162,8 @@ ftl_md_destroy_region_flags(struct spdk_ftl_dev *dev, int region_type)
 {
 	switch (region_type) {
 	case FTL_LAYOUT_REGION_TYPE_SB:
-	case FTL_LAYOUT_REGION_TYPE_BAND_MD:
-	case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
+	// case FTL_LAYOUT_REGION_TYPE_BAND_MD:
+	// case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
 	case FTL_LAYOUT_REGION_TYPE_NVC_MD:
 	case FTL_LAYOUT_REGION_TYPE_TRIM_MD:
 	case FTL_LAYOUT_REGION_TYPE_TRIM_LOG:

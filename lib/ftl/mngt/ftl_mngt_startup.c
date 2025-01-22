@@ -89,14 +89,14 @@ static const struct ftl_mngt_process_desc desc_startup = {
 			.name = "Initialize layout",
 			.action = ftl_mngt_init_layout
 		},
-		// {
-		// 	.name = "Verify layout",
-		// 	.action = ftl_mngt_layout_verify,
-		// },
-		// {
-		// 	.name = "Upgrade layout",
-		// 	.action = ftl_mngt_layout_upgrade,
-		// },
+		{
+			.name = "Verify layout",
+			.action = ftl_mngt_layout_verify,
+		},
+		{
+			.name = "Upgrade layout",
+			.action = ftl_mngt_layout_upgrade,
+		},
 		{
 			.name = "Scrub NV cache",
 			.action = ftl_mngt_scrub_nv_cache,
@@ -115,11 +115,11 @@ static const struct ftl_mngt_process_desc desc_startup = {
 			.action = ftl_mngt_init_nv_cache,
 			.cleanup = ftl_mngt_deinit_nv_cache
 		},
-		{
-			.name = "Initialize valid map",
-			.action = ftl_mngt_init_vld_map,
-			.cleanup = ftl_mngt_deinit_vld_map
-		},
+		// {
+		// 	.name = "Initialize valid map",
+		// 	.action = ftl_mngt_init_vld_map,
+		// 	.cleanup = ftl_mngt_deinit_vld_map
+		// },
 		{
 			.name = "Initialize trim map",
 			.action = ftl_mngt_init_trim_map,
@@ -164,10 +164,10 @@ static const struct ftl_mngt_process_desc desc_first_start = {
 			.name = "Finalize band initialization",
 			.action = ftl_mngt_finalize_init_bands,
 		},
-		{
-			.name = "Save initial band info metadata",
-			.action = ftl_mngt_persist_band_info_metadata,
-		},
+		// {
+		// 	.name = "Save initial band info metadata",
+		// 	.action = ftl_mngt_persist_band_info_metadata,
+		// },
 		{
 			.name = "Save initial chunk info metadata",
 			.action = ftl_mngt_persist_nv_cache_metadata,

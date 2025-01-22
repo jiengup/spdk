@@ -226,7 +226,7 @@ hello_start(void *arg1)
 	struct spdk_ftl_conf conf;
 	spdk_ftl_get_default_conf(&conf, sizeof(struct spdk_ftl_conf));
 	conf.name = "bpao";
-	conf.cache_bdev = "nvme1n1";
+	conf.cache_bdev = "nvme1n1p0";
 	conf.mode |= SPDK_FTL_MODE_CREATE;
 
 	spdk_ftl_dev_init(&conf, NULL, NULL);

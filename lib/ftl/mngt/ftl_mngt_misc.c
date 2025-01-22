@@ -238,21 +238,21 @@ ftl_mngt_dump_stats(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
 	ftl_mngt_next_step(mngt);
 }
 
-void
-ftl_mngt_init_vld_map(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
-{
-	struct ftl_md *valid_map_md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_VALID_MAP];
+// void
+// ftl_mngt_init_vld_map(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
+// {
+// 	struct ftl_md *valid_map_md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_VALID_MAP];
 
-	dev->valid_map = ftl_bitmap_create(ftl_md_get_buffer(valid_map_md),
-					   ftl_md_get_buffer_size(valid_map_md));
-	if (!dev->valid_map) {
-		FTL_ERRLOG(dev, "Failed to create valid map\n");
-		ftl_mngt_fail_step(mngt);
-		return;
-	}
+// 	dev->valid_map = ftl_bitmap_create(ftl_md_get_buffer(valid_map_md),
+// 					   ftl_md_get_buffer_size(valid_map_md));
+// 	if (!dev->valid_map) {
+// 		FTL_ERRLOG(dev, "Failed to create valid map\n");
+// 		ftl_mngt_fail_step(mngt);
+// 		return;
+// 	}
 
-	ftl_mngt_next_step(mngt);
-}
+// 	ftl_mngt_next_step(mngt);
+// }
 
 void
 ftl_mngt_deinit_vld_map(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)

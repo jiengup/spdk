@@ -331,18 +331,19 @@ ftl_band_acquire_p2l_map(struct ftl_band *band)
 static int
 ftl_band_alloc_md_entry(struct ftl_band *band)
 {
-	struct spdk_ftl_dev *dev = band->dev;
-	struct ftl_p2l_map *p2l_map = &band->p2l_map;
-	struct ftl_layout_region *region = ftl_layout_region_get(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD);
+	ftl_abort();
+	// struct spdk_ftl_dev *dev = band->dev;
+	// struct ftl_p2l_map *p2l_map = &band->p2l_map;
+	// struct ftl_layout_region *region = ftl_layout_region_get(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD);
 
-	p2l_map->band_dma_md = ftl_mempool_get(dev->band_md_pool);
+	// p2l_map->band_dma_md = ftl_mempool_get(dev->band_md_pool);
 
-	if (!p2l_map->band_dma_md) {
-		return -1;
-	}
+	// if (!p2l_map->band_dma_md) {
+	// 	return -1;
+	// }
 
-	memset(p2l_map->band_dma_md, 0, region->entry_size * FTL_BLOCK_SIZE);
-	return 0;
+	// memset(p2l_map->band_dma_md, 0, region->entry_size * FTL_BLOCK_SIZE);
+	// return 0;
 }
 
 int

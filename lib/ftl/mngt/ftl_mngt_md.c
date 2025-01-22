@@ -35,11 +35,11 @@ is_buffer_needed(enum ftl_layout_region_type type)
 {
 	switch (type) {
 	case FTL_LAYOUT_REGION_TYPE_SB:
-	case FTL_LAYOUT_REGION_TYPE_SB_BASE:
+	// case FTL_LAYOUT_REGION_TYPE_SB_BASE:
 	case FTL_LAYOUT_REGION_TYPE_DATA_NVC:
-	case FTL_LAYOUT_REGION_TYPE_DATA_BASE:
+	// case FTL_LAYOUT_REGION_TYPE_DATA_BASE:
 	case FTL_LAYOUT_REGION_TYPE_NVC_MD_MIRROR:
-	case FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR:
+	// case FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR:
 #ifndef SPDK_FTL_L2P_FLAT
 	case FTL_LAYOUT_REGION_TYPE_L2P:
 #endif
@@ -174,12 +174,12 @@ ftl_md_restore_region(struct spdk_ftl_dev *dev, int region_type)
 	case FTL_LAYOUT_REGION_TYPE_NVC_MD:
 		status = ftl_nv_cache_load_state(&dev->nv_cache);
 		break;
-	case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
-		ftl_valid_map_load_state(dev);
-		break;
-	case FTL_LAYOUT_REGION_TYPE_BAND_MD:
-		status = ftl_bands_load_state(dev);
-		break;
+	// case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
+	// 	ftl_valid_map_load_state(dev);
+	// 	break;
+	// case FTL_LAYOUT_REGION_TYPE_BAND_MD:
+	// 	status = ftl_bands_load_state(dev);
+	// 	break;
 	default:
 		break;
 	}
@@ -246,11 +246,11 @@ ftl_mngt_fast_persist_nv_cache_metadata(struct spdk_ftl_dev *dev, struct ftl_mng
 	ftl_mngt_next_step(mngt);
 }
 
-static void
-ftl_mngt_persist_vld_map_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
-{
-	persist(dev, mngt, FTL_LAYOUT_REGION_TYPE_VALID_MAP);
-}
+// static void
+// ftl_mngt_persist_vld_map_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
+// {
+// 	persist(dev, mngt, FTL_LAYOUT_REGION_TYPE_VALID_MAP);
+// }
 
 static void
 ftl_mngt_persist_p2l_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
@@ -268,11 +268,11 @@ ftl_mngt_persist_p2l_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_process 
 	ftl_mngt_persist_bands_p2l(mngt);
 }
 
-void
-ftl_mngt_persist_band_info_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
-{
-	persist(dev, mngt, FTL_LAYOUT_REGION_TYPE_BAND_MD);
-}
+// void
+// ftl_mngt_persist_band_info_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
+// {
+// 	persist(dev, mngt, FTL_LAYOUT_REGION_TYPE_BAND_MD);
+// }
 
 static void
 ftl_mngt_persist_trim_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
@@ -324,19 +324,19 @@ static const struct ftl_mngt_process_desc desc_persist = {
 			.name = "Persist NV cache metadata",
 			.action = ftl_mngt_persist_nv_cache_metadata,
 		},
-		{
-			.name = "Persist valid map metadata",
-			.action = ftl_mngt_persist_vld_map_metadata,
-		},
+		// {
+		// 	.name = "Persist valid map metadata",
+		// 	.action = ftl_mngt_persist_vld_map_metadata,
+		// },
 		{
 			.name = "Persist P2L metadata",
 			.action = ftl_mngt_persist_p2l_metadata,
 			.ctx_size = sizeof(struct ftl_p2l_sync_ctx),
 		},
-		{
-			.name = "persist band info metadata",
-			.action = ftl_mngt_persist_band_info_metadata,
-		},
+		// {
+		// 	.name = "persist band info metadata",
+		// 	.action = ftl_mngt_persist_band_info_metadata,
+		// },
 		{
 			.name = "persist trim metadata",
 			.action = ftl_mngt_persist_trim_metadata,
@@ -623,22 +623,22 @@ shm_retry:
 	dev->sb = ftl_md_get_buffer(layout->md[FTL_LAYOUT_REGION_TYPE_SB]);
 
 	/* Setup superblock mirror to QLC */
-	region = &layout->region[FTL_LAYOUT_REGION_TYPE_SB_BASE];
-	layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE] = ftl_md_create(dev, region->current.blocks,
-			region->vss_blksz, NULL, FTL_MD_CREATE_NO_MEM, region);
-	if (NULL == layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE]) {
-		ftl_mngt_fail_step(mngt);
-		return;
-	}
+	// region = &layout->region[FTL_LAYOUT_REGION_TYPE_SB_BASE];
+	// layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE] = ftl_md_create(dev, region->current.blocks,
+	// 		region->vss_blksz, NULL, FTL_MD_CREATE_NO_MEM, region);
+	// if (NULL == layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE]) {
+	// 	ftl_mngt_fail_step(mngt);
+	// 	return;
+	// }
 
 	/* Initialize mirror region buffer */
 	md = layout->md[FTL_LAYOUT_REGION_TYPE_SB];
-	md_mirror = layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE];
+	// md_mirror = layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE];
 
-	md_mirror->dev = md->dev;
-	md_mirror->data_blocks = md->data_blocks;
-	md_mirror->data = md->data;
-	md_mirror->is_mirror = true;
+	// md_mirror->dev = md->dev;
+	// md_mirror->data_blocks = md->data_blocks;
+	// md_mirror->data = md->data;
+	// md_mirror->is_mirror = true;
 
 	/* Initialize the superblock */
 	if (dev->conf.mode & SPDK_FTL_MODE_CREATE) {
@@ -661,10 +661,10 @@ ftl_mngt_superblock_deinit(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mn
 		layout->md[FTL_LAYOUT_REGION_TYPE_SB] = NULL;
 	}
 
-	if (layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE]) {
-		ftl_md_destroy(layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE], 0);
-		layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE] = NULL;
-	}
+	// if (layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE]) {
+	// 	ftl_md_destroy(layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE], 0);
+	// 	layout->md[FTL_LAYOUT_REGION_TYPE_SB_BASE] = NULL;
+	// }
 
 	ftl_md_destroy(dev->sb_shm_md, ftl_md_destroy_shm_flags(dev));
 	dev->sb_shm_md = NULL;
@@ -688,34 +688,34 @@ ftl_mngt_restore_nv_cache_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_pro
 	restore(dev, mngt, FTL_LAYOUT_REGION_TYPE_NVC_MD);
 }
 
-static void
-ftl_mngt_restore_vld_map_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
-{
-	if (ftl_fast_startup(dev)) {
-		FTL_DEBUGLOG(dev, "SHM: found vldmap\n");
-		if (ftl_md_restore_region(dev, FTL_LAYOUT_REGION_TYPE_VALID_MAP)) {
-			ftl_mngt_fail_step(mngt);
-			return;
-		}
-		ftl_mngt_next_step(mngt);
-		return;
-	}
-	restore(dev, mngt, FTL_LAYOUT_REGION_TYPE_VALID_MAP);
-}
+// static void
+// ftl_mngt_restore_vld_map_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
+// {
+// 	if (ftl_fast_startup(dev)) {
+// 		FTL_DEBUGLOG(dev, "SHM: found vldmap\n");
+// 		if (ftl_md_restore_region(dev, FTL_LAYOUT_REGION_TYPE_VALID_MAP)) {
+// 			ftl_mngt_fail_step(mngt);
+// 			return;
+// 		}
+// 		ftl_mngt_next_step(mngt);
+// 		return;
+// 	}
+// 	restore(dev, mngt, FTL_LAYOUT_REGION_TYPE_VALID_MAP);
+// }
 
 static void
 ftl_mngt_restore_band_info_metadata(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
 {
 	if (ftl_fast_startup(dev)) {
 		FTL_DEBUGLOG(dev, "SHM: found band md\n");
-		if (ftl_md_restore_region(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD)) {
-			ftl_mngt_fail_step(mngt);
-			return;
-		}
+		// if (ftl_md_restore_region(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD)) {
+		// 	ftl_mngt_fail_step(mngt);
+		// 	return;
+		// }
 		ftl_mngt_next_step(mngt);
 		return;
 	}
-	restore(dev, mngt, FTL_LAYOUT_REGION_TYPE_BAND_MD);
+	// restore(dev, mngt, FTL_LAYOUT_REGION_TYPE_BAND_MD);
 }
 
 static void
@@ -743,10 +743,10 @@ static const struct ftl_mngt_process_desc desc_restore = {
 			.name = "Restore NV cache metadata",
 			.action = ftl_mngt_restore_nv_cache_metadata,
 		},
-		{
-			.name = "Restore valid map metadata",
-			.action = ftl_mngt_restore_vld_map_metadata,
-		},
+		// {
+		// 	.name = "Restore valid map metadata",
+		// 	.action = ftl_mngt_restore_vld_map_metadata,
+		// },
 		{
 			.name = "Restore band info metadata",
 			.action = ftl_mngt_restore_band_info_metadata,

@@ -287,29 +287,30 @@ band_open_cb(int status, void *cb_arg)
 void
 ftl_band_open(struct ftl_band *band, enum ftl_band_type type)
 {
-	struct spdk_ftl_dev *dev = band->dev;
-	struct ftl_md *md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_BAND_MD];
-	struct ftl_layout_region *region = ftl_layout_region_get(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD);
-	struct ftl_p2l_map *p2l_map = &band->p2l_map;
+	ftl_abort();
+	// struct spdk_ftl_dev *dev = band->dev;
+	// struct ftl_md *md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_BAND_MD];
+	// struct ftl_layout_region *region = ftl_layout_region_get(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD);
+	// struct ftl_p2l_map *p2l_map = &band->p2l_map;
 
-	ftl_band_set_type(band, type);
-	ftl_band_set_state(band, FTL_BAND_STATE_OPENING);
+	// ftl_band_set_type(band, type);
+	// ftl_band_set_state(band, FTL_BAND_STATE_OPENING);
 
-	memcpy(p2l_map->band_dma_md, band->md, region->entry_size * FTL_BLOCK_SIZE);
-	p2l_map->band_dma_md->state = FTL_BAND_STATE_OPEN;
-	p2l_map->band_dma_md->p2l_map_checksum = 0;
+	// memcpy(p2l_map->band_dma_md, band->md, region->entry_size * FTL_BLOCK_SIZE);
+	// p2l_map->band_dma_md->state = FTL_BAND_STATE_OPEN;
+	// p2l_map->band_dma_md->p2l_map_checksum = 0;
 
-	if (spdk_unlikely(0 != band->p2l_map.num_valid)) {
-		/*
-		 * This is inconsistent state, a band with valid block,
-		 * it could be moved on the free list
-		 */
-		assert(false && 0 == band->p2l_map.num_valid);
-		ftl_abort();
-	}
+	// if (spdk_unlikely(0 != band->p2l_map.num_valid)) {
+	// 	/*
+	// 	 * This is inconsistent state, a band with valid block,
+	// 	 * it could be moved on the free list
+	// 	 */
+	// 	assert(false && 0 == band->p2l_map.num_valid);
+	// 	ftl_abort();
+	// }
 
-	ftl_md_persist_entries(md, band->id, 1, p2l_map->band_dma_md, NULL,
-			       band_open_cb, band, &band->md_persist_entry_ctx);
+	// ftl_md_persist_entries(md, band->id, 1, p2l_map->band_dma_md, NULL,
+	// 		       band_open_cb, band, &band->md_persist_entry_ctx);
 }
 
 static void
@@ -333,32 +334,33 @@ band_close_cb(int status, void *cb_arg)
 static void
 band_map_write_cb(struct ftl_basic_rq *brq)
 {
-	struct ftl_band *band = brq->io.band;
-	struct ftl_p2l_map *p2l_map = &band->p2l_map;
-	struct spdk_ftl_dev *dev = band->dev;
-	struct ftl_layout_region *region = ftl_layout_region_get(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD);
-	struct ftl_md *md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_BAND_MD];
-	uint32_t band_map_crc;
+	ftl_abort();
+// 	struct ftl_band *band = brq->io.band;
+// 	struct ftl_p2l_map *p2l_map = &band->p2l_map;
+// 	struct spdk_ftl_dev *dev = band->dev;
+// 	struct ftl_layout_region *region = ftl_layout_region_get(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD);
+// 	struct ftl_md *md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_BAND_MD];
+// 	uint32_t band_map_crc;
 
-	if (spdk_likely(brq->success)) {
+// 	if (spdk_likely(brq->success)) {
 
-		band_map_crc = spdk_crc32c_update(p2l_map->band_map,
-						  ftl_tail_md_num_blocks(dev) * FTL_BLOCK_SIZE, 0);
-		memcpy(p2l_map->band_dma_md, band->md, region->entry_size * FTL_BLOCK_SIZE);
-		p2l_map->band_dma_md->state = FTL_BAND_STATE_CLOSED;
-		p2l_map->band_dma_md->p2l_map_checksum = band_map_crc;
+// 		band_map_crc = spdk_crc32c_update(p2l_map->band_map,
+// 						  ftl_tail_md_num_blocks(dev) * FTL_BLOCK_SIZE, 0);
+// 		memcpy(p2l_map->band_dma_md, band->md, region->entry_size * FTL_BLOCK_SIZE);
+// 		p2l_map->band_dma_md->state = FTL_BAND_STATE_CLOSED;
+// 		p2l_map->band_dma_md->p2l_map_checksum = band_map_crc;
 
-		ftl_md_persist_entries(md, band->id, 1, p2l_map->band_dma_md, NULL,
-				       band_close_cb, band, &band->md_persist_entry_ctx);
-	} else {
-#ifdef SPDK_FTL_RETRY_ON_ERROR
-		/* Try to retry in case of failure */
-		ftl_band_brq_bdev_write(brq);
-		band->queue_depth++;
-#else
-		ftl_abort();
-#endif
-	}
+// 		ftl_md_persist_entries(md, band->id, 1, p2l_map->band_dma_md, NULL,
+// 				       band_close_cb, band, &band->md_persist_entry_ctx);
+// 	} else {
+// #ifdef SPDK_FTL_RETRY_ON_ERROR
+// 		/* Try to retry in case of failure */
+// 		ftl_band_brq_bdev_write(brq);
+// 		band->queue_depth++;
+// #else
+// 		ftl_abort();
+// #endif
+// 	}
 }
 
 void
@@ -400,20 +402,21 @@ band_free_cb(int status, void *ctx)
 void
 ftl_band_free(struct ftl_band *band)
 {
-	struct spdk_ftl_dev *dev = band->dev;
-	struct ftl_p2l_map *p2l_map = &band->p2l_map;
-	struct ftl_md *md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_BAND_MD];
-	struct ftl_layout_region *region = ftl_layout_region_get(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD);
+	ftl_abort();
+	// struct spdk_ftl_dev *dev = band->dev;
+	// struct ftl_p2l_map *p2l_map = &band->p2l_map;
+	// struct ftl_md *md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_BAND_MD];
+	// struct ftl_layout_region *region = ftl_layout_region_get(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD);
 
-	memcpy(p2l_map->band_dma_md, band->md, region->entry_size * FTL_BLOCK_SIZE);
-	p2l_map->band_dma_md->state = FTL_BAND_STATE_FREE;
-	p2l_map->band_dma_md->close_seq_id = 0;
-	p2l_map->band_dma_md->p2l_map_checksum = 0;
+	// memcpy(p2l_map->band_dma_md, band->md, region->entry_size * FTL_BLOCK_SIZE);
+	// p2l_map->band_dma_md->state = FTL_BAND_STATE_FREE;
+	// p2l_map->band_dma_md->close_seq_id = 0;
+	// p2l_map->band_dma_md->p2l_map_checksum = 0;
 
-	ftl_md_persist_entries(md, band->id, 1, p2l_map->band_dma_md, NULL,
-			       band_free_cb, band, &band->md_persist_entry_ctx);
+	// ftl_md_persist_entries(md, band->id, 1, p2l_map->band_dma_md, NULL,
+	// 		       band_free_cb, band, &band->md_persist_entry_ctx);
 
-	/* TODO: The whole band erase code should probably be done here instead */
+	// /* TODO: The whole band erase code should probably be done here instead */
 }
 
 static void

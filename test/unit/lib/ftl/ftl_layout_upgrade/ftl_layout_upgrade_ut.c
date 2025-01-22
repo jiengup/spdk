@@ -6,6 +6,7 @@
 
 #include <sys/queue.h>
 
+#include "ftl_layout.h"
 #include "spdk/stdinc.h"
 
 #include "CUnit/Basic.h"
@@ -36,23 +37,23 @@ static struct ftl_layout_upgrade_desc_list layout_upgrade_desc[] = {
 		.count = FTL_SB_VERSION_CURRENT,
 		.desc = sb_upgrade_desc,
 	},
-	[FTL_LAYOUT_REGION_TYPE_SB_BASE] = {
-		.latest_ver = FTL_SB_VERSION_CURRENT,
-		.count = FTL_SB_VERSION_CURRENT,
-		.desc = sb_upgrade_desc,
-	},
+	// [FTL_LAYOUT_REGION_TYPE_SB_BASE] = {
+	// 	.latest_ver = FTL_SB_VERSION_CURRENT,
+	// 	.count = FTL_SB_VERSION_CURRENT,
+	// 	.desc = sb_upgrade_desc,
+	// },
 	[FTL_LAYOUT_REGION_TYPE_L2P] = {
 		.latest_ver = 3,
 		.count = 3,
 		.desc = l2p_upgrade_desc,
 	},
-	[FTL_LAYOUT_REGION_TYPE_BAND_MD] = {},
-	[FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR] = {},
-	[FTL_LAYOUT_REGION_TYPE_VALID_MAP] = {},
+	// [FTL_LAYOUT_REGION_TYPE_BAND_MD] = {},
+	// [FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR] = {},
+	// [FTL_LAYOUT_REGION_TYPE_VALID_MAP] = {},
 	[FTL_LAYOUT_REGION_TYPE_NVC_MD] = {},
 	[FTL_LAYOUT_REGION_TYPE_NVC_MD_MIRROR] = {},
 	[FTL_LAYOUT_REGION_TYPE_DATA_NVC] = {},
-	[FTL_LAYOUT_REGION_TYPE_DATA_BASE] = {},
+	// [FTL_LAYOUT_REGION_TYPE_DATA_BASE] = {},
 	[FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC] = {},
 	[FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC_NEXT] = {},
 	[FTL_LAYOUT_REGION_TYPE_P2L_CKPT_COMP] = {},
@@ -271,7 +272,8 @@ test_l2p_upgrade(void)
 	ctx.upgrade = &layout_upgrade_desc[0];
 	for (int reg_type = 0; reg_type < FTL_LAYOUT_REGION_TYPE_MAX;
 	     reg_type++, ctx.reg++, ctx.upgrade++) {
-		if (reg_type == FTL_LAYOUT_REGION_TYPE_SB || reg_type == FTL_LAYOUT_REGION_TYPE_SB_BASE) {
+		// if (reg_type == FTL_LAYOUT_REGION_TYPE_SB || reg_type == FTL_LAYOUT_REGION_TYPE_SB_BASE) {
+		if (reg_type == FTL_LAYOUT_REGION_TYPE_SB) {
 			ctx.reg->current.version = g_dev.sb->header.version;
 		}
 		rc = region_verify(&g_dev, &ctx);

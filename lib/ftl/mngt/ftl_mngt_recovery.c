@@ -241,11 +241,12 @@ restore_band_state_cb(struct spdk_ftl_dev *dev, struct ftl_md *md, int status)
 static void
 ftl_mngt_recovery_restore_band_state(struct spdk_ftl_dev *dev, struct ftl_mngt_process *mngt)
 {
-	struct ftl_md *md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_BAND_MD];
+	ftl_abort();
+	// struct ftl_md *md = dev->layout.md[FTL_LAYOUT_REGION_TYPE_BAND_MD];
 
-	md->owner.cb_ctx = mngt;
-	md->cb = restore_band_state_cb;
-	ftl_md_restore(md);
+	// md->owner.cb_ctx = mngt;
+	// md->cb = restore_band_state_cb;
+	// ftl_md_restore(md);
 }
 
 struct band_md_ctx {

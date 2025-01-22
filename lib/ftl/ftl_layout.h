@@ -20,52 +20,52 @@ enum ftl_layout_region_type {
 	/* Superblock describing the basic FTL information */
 	FTL_LAYOUT_REGION_TYPE_SB = 0,
 	/* Mirrored instance of the superblock on the base device */
-	FTL_LAYOUT_REGION_TYPE_SB_BASE = 1,
+	// FTL_LAYOUT_REGION_TYPE_SB_BASE = 1,
 	/* If using cached L2P, this region stores the serialized instance of it */
-	FTL_LAYOUT_REGION_TYPE_L2P = 2,
+	FTL_LAYOUT_REGION_TYPE_L2P = 1,
 
 	/* State of bands */
-	FTL_LAYOUT_REGION_TYPE_BAND_MD = 3,
+	// FTL_LAYOUT_REGION_TYPE_BAND_MD = 3,
 	/* Mirrored instance of bands state */
-	FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR = 4,
+	// FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR = 4,
 
 	/* Map of valid physical addresses, used for more efficient garbage collection */
-	FTL_LAYOUT_REGION_TYPE_VALID_MAP = 5,
+	// FTL_LAYOUT_REGION_TYPE_VALID_MAP = 2,
 
 	/* State of chunks */
-	FTL_LAYOUT_REGION_TYPE_NVC_MD = 6,
+	FTL_LAYOUT_REGION_TYPE_NVC_MD = 2,
 	/* Mirrored instance of the state of chunks */
-	FTL_LAYOUT_REGION_TYPE_NVC_MD_MIRROR = 7,
+	FTL_LAYOUT_REGION_TYPE_NVC_MD_MIRROR = 3,
 
 	/* User data region on the nv cache device */
-	FTL_LAYOUT_REGION_TYPE_DATA_NVC = 8,
+	FTL_LAYOUT_REGION_TYPE_DATA_NVC = 4,
 
 	/* User data region on the base device */
-	FTL_LAYOUT_REGION_TYPE_DATA_BASE = 9,
+	// FTL_LAYOUT_REGION_TYPE_DATA_BASE = 9,
 
 	/* P2L checkpointing allows for emulation of VSS on base device.
 	 * 4 entries are needed - 2 for each writer */
-	FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC = 10,
+	FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC = 5,
 	FTL_LAYOUT_REGION_TYPE_P2L_CKPT_MIN = FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC,
-	FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC_NEXT = 11,
-	FTL_LAYOUT_REGION_TYPE_P2L_CKPT_COMP = 12,
-	FTL_LAYOUT_REGION_TYPE_P2L_CKPT_COMP_NEXT = 13,
+	FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC_NEXT = 6,
+	FTL_LAYOUT_REGION_TYPE_P2L_CKPT_COMP = 7,
+	FTL_LAYOUT_REGION_TYPE_P2L_CKPT_COMP_NEXT = 8,
 	FTL_LAYOUT_REGION_TYPE_P2L_CKPT_MAX = FTL_LAYOUT_REGION_TYPE_P2L_CKPT_COMP_NEXT,
 
 	/* Information about trimmed space in FTL */
-	FTL_LAYOUT_REGION_TYPE_TRIM_MD = 14,
+	FTL_LAYOUT_REGION_TYPE_TRIM_MD = 9,
 	/* Mirrored information about trim */
-	FTL_LAYOUT_REGION_TYPE_TRIM_MD_MIRROR = 15,
+	FTL_LAYOUT_REGION_TYPE_TRIM_MD_MIRROR = 10,
 
 	/* Max layout region for metadata prior to the major upgrade improvements */
-	FTL_LAYOUT_REGION_TYPE_MAX_V3 = 16,
+	FTL_LAYOUT_REGION_TYPE_MAX_V3 = 11,
 
 	/* Log for the transaction of trim */
-	FTL_LAYOUT_REGION_TYPE_TRIM_LOG = 16,
+	FTL_LAYOUT_REGION_TYPE_TRIM_LOG = 11,
 	/* Mirror log for the transaction of trim */
-	FTL_LAYOUT_REGION_TYPE_TRIM_LOG_MIRROR = 17,
+	FTL_LAYOUT_REGION_TYPE_TRIM_LOG_MIRROR = 12,
 
-	FTL_LAYOUT_REGION_TYPE_MAX = 18
+	FTL_LAYOUT_REGION_TYPE_MAX = 13
 };
 
 /* last nvc/base region in terms of lba address space */

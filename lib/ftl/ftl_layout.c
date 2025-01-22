@@ -85,15 +85,15 @@ ftl_md_region_name(enum ftl_layout_region_type reg_type)
 {
 	static const char *md_region_name[FTL_LAYOUT_REGION_TYPE_MAX] = {
 		[FTL_LAYOUT_REGION_TYPE_SB] = "sb",
-		[FTL_LAYOUT_REGION_TYPE_SB_BASE] = "sb_mirror",
+		// [FTL_LAYOUT_REGION_TYPE_SB_BASE] = "sb_mirror",
 		[FTL_LAYOUT_REGION_TYPE_L2P] = "l2p",
-		[FTL_LAYOUT_REGION_TYPE_BAND_MD] = "band_md",
-		[FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR] = "band_md_mirror",
-		[FTL_LAYOUT_REGION_TYPE_VALID_MAP] = "vmap",
+		// [FTL_LAYOUT_REGION_TYPE_BAND_MD] = "band_md",
+		// [FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR] = "band_md_mirror",
+		// [FTL_LAYOUT_REGION_TYPE_VALID_MAP] = "vmap",
 		[FTL_LAYOUT_REGION_TYPE_NVC_MD] = "nvc_md",
 		[FTL_LAYOUT_REGION_TYPE_NVC_MD_MIRROR] = "nvc_md_mirror",
 		[FTL_LAYOUT_REGION_TYPE_DATA_NVC] = "data_nvc",
-		[FTL_LAYOUT_REGION_TYPE_DATA_BASE] = "data_btm",
+		// [FTL_LAYOUT_REGION_TYPE_DATA_BASE] = "data_btm",
 		[FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC] = "p2l0",
 		[FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC_NEXT] = "p2l1",
 		[FTL_LAYOUT_REGION_TYPE_P2L_CKPT_COMP] = "p2l2",
@@ -292,17 +292,17 @@ layout_setup_legacy_default_nvc(struct spdk_ftl_dev *dev)
 	}
 
 	/* Initialize band info metadata */
-	if (legacy_layout_region_open_nvc(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD, FTL_BAND_VERSION_1,
-					  sizeof(struct ftl_band_md), ftl_get_num_bands(dev))) {
-		goto error;
-	}
+	// if (legacy_layout_region_open_nvc(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD, FTL_BAND_VERSION_1,
+	// 				  sizeof(struct ftl_band_md), ftl_get_num_bands(dev))) {
+	// 	goto error;
+	// }
 
 	/* Initialize band info metadata mirror */
-	if (legacy_layout_region_open_nvc(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR, FTL_BAND_VERSION_1,
-					  sizeof(struct ftl_band_md), ftl_get_num_bands(dev))) {
-		goto error;
-	}
-	layout->region[FTL_LAYOUT_REGION_TYPE_BAND_MD].mirror_type = FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR;
+	// if (legacy_layout_region_open_nvc(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR, FTL_BAND_VERSION_1,
+	// 				  sizeof(struct ftl_band_md), ftl_get_num_bands(dev))) {
+	// 	goto error;
+	// }
+	// layout->region[FTL_LAYOUT_REGION_TYPE_BAND_MD].mirror_type = FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR;
 
 	/*
 	 * Initialize P2L checkpointing regions
@@ -390,34 +390,35 @@ error:
 	return -1;
 }
 
-static int
-layout_setup_legacy_default_base(struct spdk_ftl_dev *dev)
-{
-	struct ftl_layout *layout = &dev->layout;
+// static int
+// layout_setup_legacy_default_base(struct spdk_ftl_dev *dev)
+// {
+// 	struct ftl_layout *layout = &dev->layout;
 
-	/* Base device layout is as follows:
-	 * - superblock
-	 * - data
-	 * - valid map
-	 */
-	if (layout_region_create_base(dev, FTL_LAYOUT_REGION_TYPE_DATA_BASE, 0, FTL_BLOCK_SIZE,
-				      ftl_layout_base_offset(dev))) {
-		return -1;
-	}
+// 	/* Base device layout is as follows:
+// 	 * - superblock
+// 	 * - data
+// 	 * - valid map
+// 	 */
+// 	if (layout_region_create_base(dev, FTL_LAYOUT_REGION_TYPE_DATA_BASE, 0, FTL_BLOCK_SIZE,
+// 				      ftl_layout_base_offset(dev))) {
+// 		return -1;
+// 	}
 
-	if (legacy_layout_region_open_base(dev, FTL_LAYOUT_REGION_TYPE_VALID_MAP, 0, FTL_BLOCK_SIZE,
-					   ftl_md_region_blocks(dev, spdk_divide_round_up(layout->base.total_blocks + layout->nvc.total_blocks,
-							   8)))) {
-		return -1;
-	}
+// 	if (legacy_layout_region_open_base(dev, FTL_LAYOUT_REGION_TYPE_VALID_MAP, 0, FTL_BLOCK_SIZE,
+// 					   ftl_md_region_blocks(dev, spdk_divide_round_up(layout->base.total_blocks + layout->nvc.total_blocks,
+// 							   8)))) {
+// 		return -1;
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 
 static int
 layout_setup_legacy_default(struct spdk_ftl_dev *dev)
 {
-	if (layout_setup_legacy_default_nvc(dev) || layout_setup_legacy_default_base(dev)) {
+	// if (layout_setup_legacy_default_nvc(dev) || layout_setup_legacy_default_base(dev)) {
+	if (layout_setup_legacy_default_nvc(dev)) {
 		return -1;
 	}
 	return 0;
@@ -437,17 +438,17 @@ layout_setup_default_nvc(struct spdk_ftl_dev *dev)
 	}
 
 	/* Initialize band info metadata */
-	if (layout_region_create_nvc(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD, FTL_BAND_VERSION_CURRENT,
-				     sizeof(struct ftl_band_md), ftl_get_num_bands(dev))) {
-		goto error;
-	}
+	// if (layout_region_create_nvc(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD, FTL_BAND_VERSION_CURRENT,
+	// 			     sizeof(struct ftl_band_md), ftl_get_num_bands(dev))) {
+	// 	goto error;
+	// }
 
 	/* Initialize band info metadata mirror */
-	if (layout_region_create_nvc(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR, FTL_BAND_VERSION_CURRENT,
-				     sizeof(struct ftl_band_md), ftl_get_num_bands(dev))) {
-		goto error;
-	}
-	layout->region[FTL_LAYOUT_REGION_TYPE_BAND_MD].mirror_type = FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR;
+	// if (layout_region_create_nvc(dev, FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR, FTL_BAND_VERSION_CURRENT,
+	// 			     sizeof(struct ftl_band_md), ftl_get_num_bands(dev))) {
+	// 	goto error;
+	// }
+	// layout->region[FTL_LAYOUT_REGION_TYPE_BAND_MD].mirror_type = FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR;
 
 	/*
 	 * Initialize P2L checkpointing regions
@@ -521,35 +522,36 @@ error:
 	return -1;
 }
 
-static int
-layout_setup_default_base(struct spdk_ftl_dev *dev)
-{
-	struct ftl_layout *layout = &dev->layout;
-	uint64_t valid_map_size;
+// static int
+// layout_setup_default_base(struct spdk_ftl_dev *dev)
+// {
+// 	struct ftl_layout *layout = &dev->layout;
+// 	uint64_t valid_map_size;
 
-	/* Base device layout is as follows:
-	 * - superblock
-	 * - data
-	 * - valid map
-	 */
-	if (layout_region_create_base(dev, FTL_LAYOUT_REGION_TYPE_DATA_BASE, 0, FTL_BLOCK_SIZE,
-				      ftl_layout_base_offset(dev))) {
-		return -1;
-	}
+// 	/* Base device layout is as follows:
+// 	 * - superblock
+// 	 * - data
+// 	 * - valid map
+// 	 */
+// 	if (layout_region_create_base(dev, FTL_LAYOUT_REGION_TYPE_DATA_BASE, 0, FTL_BLOCK_SIZE,
+// 				      ftl_layout_base_offset(dev))) {
+// 		return -1;
+// 	}
 
-	valid_map_size = spdk_divide_round_up(layout->base.total_blocks + layout->nvc.total_blocks, 8);
-	if (layout_region_create_base(dev, FTL_LAYOUT_REGION_TYPE_VALID_MAP, 0, FTL_BLOCK_SIZE,
-				      ftl_md_region_blocks(dev, valid_map_size))) {
-		return -1;
-	}
+// 	valid_map_size = spdk_divide_round_up(layout->base.total_blocks + layout->nvc.total_blocks, 8);
+// 	if (layout_region_create_base(dev, FTL_LAYOUT_REGION_TYPE_VALID_MAP, 0, FTL_BLOCK_SIZE,
+// 				      ftl_md_region_blocks(dev, valid_map_size))) {
+// 		return -1;
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 
 static int
 layout_setup_default(struct spdk_ftl_dev *dev)
 {
-	if (layout_setup_default_nvc(dev) || layout_setup_default_base(dev)) {
+	// if (layout_setup_default_nvc(dev) || layout_setup_default_base(dev)) {
+	 if (layout_setup_default_nvc(dev)) {
 		return -1;
 	}
 	return 0;
@@ -605,7 +607,8 @@ ftl_layout_setup(struct spdk_ftl_dev *dev)
 
 	/* Invalidate all regions */
 	for (i = 0; i < FTL_LAYOUT_REGION_TYPE_MAX; ++i) {
-		if (i == FTL_LAYOUT_REGION_TYPE_SB || i == FTL_LAYOUT_REGION_TYPE_SB_BASE) {
+		// if (i == FTL_LAYOUT_REGION_TYPE_SB || i == FTL_LAYOUT_REGION_TYPE_SB_BASE) {
+		if (i == FTL_LAYOUT_REGION_TYPE_SB) {
 			/* Super block has been already initialized */
 			continue;
 		}
@@ -691,7 +694,7 @@ ftl_layout_setup_superblock(struct spdk_ftl_dev *dev)
 	const struct spdk_bdev *bdev;
 	struct ftl_layout *layout = &dev->layout;
 	struct ftl_layout_region *region = &layout->region[FTL_LAYOUT_REGION_TYPE_SB];
-	// uint64_t total_blocks, offset, left;
+	uint64_t total_blocks, offset, left;
 
 	assert(layout->md[FTL_LAYOUT_REGION_TYPE_SB] == NULL);
 
@@ -712,7 +715,7 @@ ftl_layout_setup_superblock(struct spdk_ftl_dev *dev)
 	assert(region->ioch != NULL);
 	assert(region->current.offset == 0);
 
-	// if (layout_region_create_base(dev, FTL_LAYOUT_REGION_TYPE_SB_BASE, FTL_SB_VERSION_CURRENT,
+	// if (layout_region_create_nvc(dev, FTL_LAYOUT_REGION_TYPE_SB_BASE, FTL_SB_VERSION_CURRENT,
 	// 			      superblock_region_size(dev), 1)) {
 	// 	FTL_ERRLOG(dev, "Error when setting up secondary super block\n");
 	// 	return -1;
@@ -725,12 +728,14 @@ ftl_layout_setup_superblock(struct spdk_ftl_dev *dev)
 	/* Check if SB can be stored at the end of base device */
 	// total_blocks = spdk_bdev_get_num_blocks(
 	// 		       spdk_bdev_desc_get_bdev(dev->base_bdev_desc));
-	// offset = region->current.offset + region->current.blocks;
-	// left = total_blocks - offset;
-	// if ((left > total_blocks) || (offset > total_blocks)) {
-	// 	FTL_ERRLOG(dev, "Error when setup base device super block\n");
-	// 	return -1;
-	// }
+	total_blocks = spdk_bdev_get_num_blocks(
+			       spdk_bdev_desc_get_bdev(dev->nv_cache.bdev_desc));
+	offset = region->current.offset + region->current.blocks;
+	left = total_blocks - offset;
+	if ((left > total_blocks) || (offset > total_blocks)) {
+		FTL_ERRLOG(dev, "Error when setup base device super block\n");
+		return -1;
+	}
 
 	return 0;
 }
@@ -738,16 +743,16 @@ ftl_layout_setup_superblock(struct spdk_ftl_dev *dev)
 int
 ftl_layout_clear_superblock(struct spdk_ftl_dev *dev)
 {
-	int rc;
+	// int rc;
 
-	rc = ftl_layout_tracker_bdev_rm_region(dev->nvc_layout_tracker, FTL_LAYOUT_REGION_TYPE_SB,
+	return ftl_layout_tracker_bdev_rm_region(dev->nvc_layout_tracker, FTL_LAYOUT_REGION_TYPE_SB,
 					       FTL_SB_VERSION_CURRENT);
-	if (rc) {
-		return rc;
-	}
+	// if (rc) {
+	// 	return rc;
+	// }
 
-	return ftl_layout_tracker_bdev_rm_region(dev->base_layout_tracker, FTL_LAYOUT_REGION_TYPE_SB_BASE,
-			FTL_SB_VERSION_CURRENT);
+	// return ftl_layout_tracker_bdev_rm_region(dev->base_layout_tracker, FTL_LAYOUT_REGION_TYPE_SB_BASE,
+	// 		FTL_SB_VERSION_CURRENT);
 }
 
 void
@@ -763,13 +768,13 @@ ftl_layout_dump(struct spdk_ftl_dev *dev)
 			dump_region(dev, reg);
 		}
 	}
-	FTL_NOTICELOG(dev, "Base device layout:\n");
-	for (i = 0; i < FTL_LAYOUT_REGION_TYPE_MAX; ++i) {
-		reg = ftl_layout_region_get(dev, i);
-		if (reg && reg->bdev_desc == dev->base_bdev_desc) {
-			dump_region(dev, reg);
-		}
-	}
+	// FTL_NOTICELOG(dev, "Base device layout:\n");
+	// for (i = 0; i < FTL_LAYOUT_REGION_TYPE_MAX; ++i) {
+	// 	reg = ftl_layout_region_get(dev, i);
+	// 	if (reg && reg->bdev_desc == dev->base_bdev_desc) {
+	// 		dump_region(dev, reg);
+	// 	}
+	// }
 }
 
 uint64_t
