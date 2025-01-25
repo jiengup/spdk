@@ -89,7 +89,7 @@ ftl_md_region_name(enum ftl_layout_region_type reg_type)
 		[FTL_LAYOUT_REGION_TYPE_L2P] = "l2p",
 		// [FTL_LAYOUT_REGION_TYPE_BAND_MD] = "band_md",
 		// [FTL_LAYOUT_REGION_TYPE_BAND_MD_MIRROR] = "band_md_mirror",
-		// [FTL_LAYOUT_REGION_TYPE_VALID_MAP] = "vmap",
+		[FTL_LAYOUT_REGION_TYPE_VALID_MAP] = "vmap",
 		[FTL_LAYOUT_REGION_TYPE_NVC_MD] = "nvc_md",
 		[FTL_LAYOUT_REGION_TYPE_NVC_MD_MIRROR] = "nvc_md_mirror",
 		[FTL_LAYOUT_REGION_TYPE_DATA_NVC] = "data_nvc",
@@ -430,6 +430,7 @@ layout_setup_default_nvc(struct spdk_ftl_dev *dev)
 	int region_type;
 	uint64_t blocks;
 	struct ftl_layout *layout = &dev->layout;
+	uint64_t valid_map_size;
 
 	/* Initialize L2P region */
 	blocks = ftl_md_region_blocks(dev, layout->l2p.addr_size * dev->num_lbas);
@@ -514,6 +515,13 @@ layout_setup_default_nvc(struct spdk_ftl_dev *dev)
 		goto error;
 	}
 	layout->region[FTL_LAYOUT_REGION_TYPE_NVC_MD].mirror_type = FTL_LAYOUT_REGION_TYPE_NVC_MD_MIRROR;
+
+
+	valid_map_size = spdk_divide_round_up(layout->nvc.total_blocks, 8);
+	if (layout_region_create_nvc(dev, FTL_LAYOUT_REGION_TYPE_VALID_MAP, 0, FTL_BLOCK_SIZE,
+				      ftl_md_region_blocks(dev, valid_map_size))) {
+		return -1;
+	}
 
 	return 0;
 
@@ -630,7 +638,7 @@ ftl_layout_setup(struct spdk_ftl_dev *dev)
 		FTL_ERRLOG(dev, "Mismatched FTL num_lbas\n");
 		return -EINVAL;
 	}
-	layout->l2p.addr_length = spdk_u64log2(layout->base.total_blocks + layout->nvc.total_blocks) + 1;
+	layout->l2p.addr_length = spdk_u64log2(layout->nvc.total_blocks) + 1;
 	layout->l2p.addr_size = layout->l2p.addr_length > 32 ? 8 : 4;
 	layout->l2p.lbas_in_page = FTL_BLOCK_SIZE / layout->l2p.addr_size;
 
@@ -676,8 +684,8 @@ ftl_layout_setup(struct spdk_ftl_dev *dev)
 
 	rc = ftl_superblock_store_blob_area(dev);
 
-	FTL_NOTICELOG(dev, "Base device capacity:         %.2f MiB\n",
-		      blocks2mib(layout->base.total_blocks));
+	// FTL_NOTICELOG(dev, "Base device capacity:         %.2f MiB\n",
+	// 	      blocks2mib(layout->base.total_blocks));
 	FTL_NOTICELOG(dev, "NV cache device capacity:       %.2f MiB\n",
 		      blocks2mib(layout->nvc.total_blocks));
 	FTL_NOTICELOG(dev, "L2P entries:                    %"PRIu64"\n", dev->num_lbas);

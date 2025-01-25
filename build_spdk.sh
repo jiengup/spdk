@@ -22,10 +22,13 @@ sudo PCI_ALLOWED=0000:c6:00.0 ./scripts/setup.sh
 
 # grand gbd sudo permission
 mv /usr/bin/gdb /usr/bin/gdb-ori
-mv scripts/gdb /usr/bin/gdb
+cp scripts/gdb /usr/bin/gdb
 chmod +x /usr/bin/gdb
 
 # install vscode extensions
 if command -v code &> /dev/null; then
-  code install-extension ms-vscode.cpptools llvm-vs-code-extensions.vscode-clangd GitHub.copilot GitHub.copilot-chat
+  code --install-extension ms-vscode.cpptools 
+  code --install-extension llvm-vs-code-extensions.vscode-clangd 
+  code --install-extension GitHub.copilot
+  code --install-extension GitHub.copilot-chat
 fi

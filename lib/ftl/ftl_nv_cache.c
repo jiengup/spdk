@@ -142,7 +142,7 @@ nvc_scrub_clear_cb(struct spdk_ftl_dev *dev, struct ftl_md *md, int status)
 	scrub_ctx->chunk_no++;
 	scrub_ctx->reg_chunk.current.offset += dev->layout.nvc.chunk_data_blocks;
 
-	FTL_DEBUGLOG(dev, "Scrub progress: %"PRIu64"/%"PRIu64" chunks\n",
+	FTL_NOTICELOG(dev, "Scrub progress: %"PRIu64"/%"PRIu64" chunks\n",
 		     scrub_ctx->chunk_no, dev->layout.nvc.chunk_count);
 
 	if (status || nvc_scrub_find_next_chunk(dev, scrub_ctx)) {
@@ -254,8 +254,8 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	FTL_NOTICELOG(dev, "NV cache chunk count %"PRIu64"\n", nv_cache->chunk_count);
 	nv_cache->tail_md_chunk_blocks = ftl_nv_cache_chunk_tail_md_num_blocks(nv_cache);
 	FTL_NOTICELOG(dev, "NV cache tail md blocks: %"PRIu64"\n", nv_cache->tail_md_chunk_blocks);
-	nv_cache->traffic_group_num = dev->conf.group_num;
 	FTL_NOTICELOG(dev, "NV cache chunk tail md offset: %"PRIu64"\n", chunk_tail_md_offset(nv_cache));
+	nv_cache->traffic_group_num = dev->conf.group_num;
 	FTL_NOTICELOG(dev, "NV cache traffic group num: %"PRIu8"\n", nv_cache->traffic_group_num);
 	nv_cache->max_open_chunks = spdk_divide_round_up(nv_cache->traffic_group_num * FTL_MAX_OPEN_CHUNK_FACTOR, 
 													 100);

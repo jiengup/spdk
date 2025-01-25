@@ -855,10 +855,10 @@ ftl_core_poller(void *ctx)
 	ftl_process_io_queue(dev);
 	// ftl_writer_run(&dev->writer_user);
 	// ftl_writer_run(&dev->writer_gc);
-	ftl_reloc(dev->reloc);
+	// ftl_reloc(dev->reloc);
 	ftl_nv_cache_process(dev);
 	ftl_l2p_process(dev);
-	ftl_show_stat(dev);
+	// ftl_show_stat(dev);
 
 	if (io_activity_total_old != dev->stats.io_activity_total) {
 		return SPDK_POLLER_BUSY;

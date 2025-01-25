@@ -10,6 +10,7 @@
 #include "ftl_core.h"
 #include "ftl_md.h"
 #include "ftl_nv_cache_io.h"
+#include "ftl_log.h"
 
 struct ftl_md;
 static void io_submit(struct ftl_md *md);
@@ -891,6 +892,7 @@ persist_mirror_cb(struct spdk_ftl_dev *dev, struct ftl_md *md, int status)
 void
 ftl_md_persist(struct ftl_md *md)
 {
+	FTL_NOTICELOG(md->dev, "Persisting %s MD data\n", md->region->name);
 	if (has_mirror(md)) {
 		struct ftl_md *md_mirror = ftl_md_get_mirror(md);
 
@@ -1138,7 +1140,7 @@ ftl_md_create_region_flags(struct spdk_ftl_dev *dev, int region_type)
 			flags |= FTL_MD_CREATE_SHM_NEW;
 		}
 		break;
-	// case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
+	case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
 	// case FTL_LAYOUT_REGION_TYPE_TRIM_MD:
 	case FTL_LAYOUT_REGION_TYPE_TRIM_LOG:
 		if (!ftl_fast_startup(dev) && !ftl_fast_recovery(dev)) {
