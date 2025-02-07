@@ -29,7 +29,6 @@ struct spdk_ftl_conf g_default_conf = {
 		.chunk_compaction_threshold = 99,
 		.chunk_free_target = 5,
 	},
-	.algo = "single_group_greedy",
 	.fast_shutdown = true,
 };
 

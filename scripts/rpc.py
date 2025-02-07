@@ -2323,7 +2323,8 @@ Format: 'user:u1 secret:s1 muser:mu1 msecret:ms1,user:u2 secret:s2 muser:mu2 mse
                    required=True)
     p.add_argument('--overprovisioning', help='Percentage of device used for relocation, not exposed'
                    ' to user (optional); default 20', type=int)
-    p.add_argument('--algo', help='Name of the operation set of nv cache device(optional); default single_group', type=str)
+    p.add_argument('--algo', help='Name of the operation set of nv cache device', type=str,
+            required=True)
     p.add_argument('--group_num', help='Num of traffic groups.(optional); default 1', type=int)
     p.add_argument('--l2p-dram-limit', help='l2p size that could reside in DRAM (optional); default 2048',
                    type=int)
@@ -2354,7 +2355,8 @@ Format: 'user:u1 secret:s1 muser:mu1 msecret:ms1,user:u2 secret:s2 muser:mu2 mse
                    required=True)
     p.add_argument('--overprovisioning', help='Percentage of device used for relocation, not exposed'
                    ' to user (optional); default 20', type=int)
-    p.add_argument('--algo', help='Name of the operation set of nv cache device(optional); default single_group', type=str)
+    p.add_argument('--algo', help='Name of the operation set of nv cache device', type=str,
+            required=True)
     p.add_argument('--group_num', help='Num of traffic groups.(optional); default 1', type=int)
     p.add_argument('--l2p-dram-limit', help='l2p size that could reside in DRAM (optional); default 2048',
                    type=int)
