@@ -328,11 +328,11 @@ static const struct ftl_mngt_process_desc desc_persist = {
 		// 	.name = "Persist valid map metadata",
 		// 	.action = ftl_mngt_persist_vld_map_metadata,
 		// },
-		{
-			.name = "Persist P2L metadata",
-			.action = ftl_mngt_persist_p2l_metadata,
-			.ctx_size = sizeof(struct ftl_p2l_sync_ctx),
-		},
+		// {
+		// 	.name = "Persist P2L metadata",
+		// 	.action = ftl_mngt_persist_p2l_metadata,
+		// 	.ctx_size = sizeof(struct ftl_p2l_sync_ctx),
+		// },
 		// {
 		// 	.name = "persist band info metadata",
 		// 	.action = ftl_mngt_persist_band_info_metadata,

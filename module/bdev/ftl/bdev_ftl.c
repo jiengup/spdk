@@ -74,7 +74,7 @@ SPDK_BDEV_MODULE_REGISTER(ftl, &g_ftl_if)
 static void
 bdev_ftl_free(struct ftl_bdev *ftl_bdev)
 {
-	spdk_bdev_close(ftl_bdev->base_bdev_desc);
+	// spdk_bdev_close(ftl_bdev->base_bdev_desc);
 	spdk_bdev_close(ftl_bdev->cache_bdev_desc);
 	free(ftl_bdev->bdev.name);
 	free(ftl_bdev);
