@@ -1578,10 +1578,18 @@ nv_cache_write(void *_io)
 	struct ftl_nv_cache *nv_cache = &dev->nv_cache;
 	int rc;
 
-	rc = spdk_bdev_writev_blocks_with_md(nv_cache->bdev_desc, nv_cache->cache_ioch,
-					     io->iov, io->iov_cnt, io->md,
+	if (spdk_bdev_is_md_separate(spdk_bdev_desc_get_bdev(nv_cache->bdev_desc))) {
+		rc = spdk_bdev_writev_blocks_with_md(nv_cache->bdev_desc, nv_cache->cache_ioch,
+							io->iov, io->iov_cnt, io->md,
+							ftl_addr_to_nvc_offset(dev, io->addr), io->num_blocks,
+							ftl_nv_cache_submit_cb, io);
+	} else {
+		rc = spdk_bdev_writev_blocks(nv_cache->bdev_desc, nv_cache->cache_ioch,
+					     io->iov, io->iov_cnt,
 					     ftl_addr_to_nvc_offset(dev, io->addr), io->num_blocks,
 					     ftl_nv_cache_submit_cb, io);
+	}
+
 	if (spdk_unlikely(rc)) {
 		SPDK_NOTICELOG("[FAILED] Finnaly LBA %"PRIu64" writing to NV cache addres %"PRIu64", written blocks %"PRIu64"\n", io->lba, io->addr, io->num_blocks);
 		if (rc == -ENOMEM) {
