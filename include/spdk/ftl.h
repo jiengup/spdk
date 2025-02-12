@@ -18,6 +18,7 @@ extern "C" {
 struct spdk_ftl_dev;
 struct ftl_io;
 struct spdk_jsonrpc_request;
+struct ftl_bdev;
 
 /* Limit thresholds */
 enum {
