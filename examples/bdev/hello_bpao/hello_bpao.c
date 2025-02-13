@@ -147,8 +147,8 @@ static void hello_write(void *arg) {
   // hello_context->buff_size, write_complete, 		     hello_context);
   struct ftl_io *io = calloc(1, sizeof(io));
 
-  rc = spdk_ftl_writev(hello_context->dev, io, hello_context->io_channel, 0, 2,
-                       hello_context->iov, 2, write_cb, hello_context);
+  rc = spdk_ftl_writev(hello_context->dev, io, hello_context->io_channel, 0, 1,
+                       hello_context->iov, 1, write_cb, hello_context);
   if (rc != 0) {
     if (hello_context->iov[0].iov_base) {
       spdk_dma_free(hello_context->iov[0].iov_base);
@@ -236,24 +236,13 @@ void bpao_init_cb(struct spdk_ftl_dev *dev, void *cb_arg, int status) {
   hello_context->buff1_size = 4096;
   hello_context->buff2_size = 4096;
 
-  hello_context->iov[0].iov_base =
-      spdk_dma_zmalloc(hello_context->buff1_size, 0, NULL);
+  hello_context->iov[0].iov_base = spdk_dma_malloc(4096, 0, NULL);
   if (!hello_context->iov[0].iov_base) {
     SPDK_ERRLOG("Failed to allocate buffer\n");
     spdk_app_stop(-1);
     return;
   }
   hello_context->iov[0].iov_len = 4096;
-
-  hello_context->iov[1].iov_base =
-      spdk_dma_zmalloc(hello_context->buff2_size, 0, NULL);
-  if (!hello_context->iov[1].iov_base) {
-    SPDK_ERRLOG("Failed to allocate buffer\n");
-    spdk_dma_free(hello_context->iov[0].iov_base);
-    spdk_app_stop(-1);
-    return;
-  }
-  hello_context->iov[1].iov_len = 4096;
 
   hello_write(hello_context);
 }
@@ -272,7 +261,8 @@ static void hello_start(void *arg1) {
   struct spdk_ftl_conf conf;
   spdk_ftl_get_default_conf(&conf, sizeof(struct spdk_ftl_conf));
   conf.name = "bpao";
-  conf.cache_bdev = "nvme1n1p0";
+  conf.cache_bdev = "nvme0n1p0";
+  conf.algo = "single_group_greedy";
   conf.mode |= SPDK_FTL_MODE_CREATE;
 
   spdk_ftl_dev_init(&conf, bpao_init_cb, arg1);
@@ -292,7 +282,7 @@ int main(int argc, char **argv) {
   spdk_app_opts_init(&opts, sizeof(opts));
   opts.name = "hello_bdev";
   opts.rpc_addr = NULL;
-  opts.json_config_file = "/dataset/spdk_config/nvme_ssd.json";
+  opts.json_config_file = "/users/guntherX/mcbs/spdk-config/nvme_split.json";
 
   /*
    * Parse built-in SPDK command line parameters as well

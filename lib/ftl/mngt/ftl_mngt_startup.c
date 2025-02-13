@@ -97,10 +97,10 @@ static const struct ftl_mngt_process_desc desc_startup = {
 			.name = "Upgrade layout",
 			.action = ftl_mngt_layout_upgrade,
 		},
-		{
-			.name = "Scrub NV cache",
-			.action = ftl_mngt_scrub_nv_cache,
-		},
+		// {
+		// 	.name = "Scrub NV cache",
+		// 	.action = ftl_mngt_scrub_nv_cache,
+		// },
 		{
 			.name = "Initialize metadata",
 			.action = ftl_mngt_init_md,

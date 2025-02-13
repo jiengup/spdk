@@ -409,6 +409,10 @@ spdk_ftl_writev(struct spdk_ftl_dev *dev, struct ftl_io *io, struct spdk_io_chan
 		return -EINVAL;
 	}
 
+	if (dev->nv_cache.halt) {
+		return -EBUSY;
+	}
+
 	if (!dev->initialized) {
 		return -EBUSY;
 	}

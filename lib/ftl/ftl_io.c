@@ -182,6 +182,7 @@ ftl_io_init(struct spdk_io_channel *_ioch, struct ftl_io *io, uint64_t lba, size
 	io->iov_cnt = iov_cnt;
 	io->num_blocks = num_blocks;
 	io->trace = ftl_trace_alloc_id(dev);
+	io->nv_cache_chunk = NULL;
 
 	ftl_trace_lba_io_init(io->dev, io);
 	return 0;
