@@ -50,7 +50,7 @@
 #define FTL_NV_CACHE_THROTTLE_MODIFIER_MIN	-0.8
 #define FTL_NV_CACHE_THROTTLE_MODIFIER_MAX	0.5
 
-#define FTL_MAX_OPEN_CHUNK_FACTOR 210
+#define FTL_MAX_OPEN_CHUNK_FACTOR 200
 #define FTL_FREE_COMPACTION_THRESHOLD 10
 #define FTL_MAX_GROUP_NUM 10
 
@@ -106,8 +106,10 @@ struct ftl_nv_cache_chunk_md {
 
 	uint64_t valid_count;
 
+	enum ftl_layout_region_type p2l_log_type;
+
 	/* Reserved */
-	uint8_t reserved[4011];
+	uint8_t reserved[4007];
 } __attribute__((packed));
 
 SPDK_STATIC_ASSERT(sizeof(struct ftl_nv_cache_chunk_md) == FTL_BLOCK_SIZE,
@@ -142,6 +144,9 @@ struct ftl_nv_cache_chunk {
 
 	/* For writing metadata */
 	struct ftl_md_io_entry_ctx md_persist_entry_ctx;
+
+	/* P2L Log for IOs */
+	struct ftl_p2l_log *p2l_log;
 };
 
 struct ftl_nv_cache_compactor {
@@ -271,6 +276,7 @@ void ftl_nv_cache_scrub(struct spdk_ftl_dev *dev, nvc_scrub_cb cb, void *cb_ctx)
 int ftl_nv_cache_init(struct spdk_ftl_dev *dev);
 void ftl_nv_cache_deinit(struct spdk_ftl_dev *dev);
 bool ftl_nv_cache_write(struct ftl_io *io);
+void ftl_nv_cache_write_complete(struct ftl_io *io, bool success);
 void ftl_nv_cache_fill_md(struct ftl_io *io);
 int ftl_nv_cache_read(struct ftl_io *io, ftl_addr addr, uint32_t num_blocks,
 		      spdk_bdev_io_completion_cb cb, void *cb_arg);
@@ -282,6 +288,8 @@ void ftl_chunk_map_set_lba(struct ftl_nv_cache_chunk *chunk,
 uint64_t ftl_chunk_map_get_lba(struct ftl_nv_cache_chunk *chunk, uint64_t offset);
 
 void ftl_nv_cache_set_addr(struct spdk_ftl_dev *dev, uint64_t lba, ftl_addr addr);
+
+void ftl_nv_cache_chunk_set_addr(struct ftl_nv_cache_chunk *chunk, uint64_t lba, ftl_addr addr);
 
 void ftl_nv_cache_clear_addr(struct spdk_ftl_dev *dev, ftl_addr addr);
 

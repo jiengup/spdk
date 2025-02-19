@@ -862,7 +862,7 @@ ftl_core_poller(void *ctx)
 	// ftl_reloc(dev->reloc);
 	ftl_nv_cache_process(dev);
 	ftl_l2p_process(dev);
-	// ftl_show_stat(dev);
+	ftl_show_stat(dev);
 
 	if (io_activity_total_old != dev->stats.io_activity_total) {
 		return SPDK_POLLER_BUSY;

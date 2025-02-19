@@ -74,7 +74,7 @@ static struct ftl_layout_upgrade_desc_list layout_upgrade_desc[] = {
 	// 	.count = FTL_BAND_VERSION_CURRENT,
 	// 	.desc = band_upgrade_desc,
 	// },
-	// [FTL_LAYOUT_REGION_TYPE_VALID_MAP] = {},
+	[FTL_LAYOUT_REGION_TYPE_VALID_MAP] = {},
 	[FTL_LAYOUT_REGION_TYPE_NVC_MD] = {
 		.latest_ver = FTL_NVC_VERSION_CURRENT,
 		.count = FTL_NVC_VERSION_CURRENT,
@@ -109,7 +109,6 @@ static struct ftl_layout_upgrade_desc_list layout_upgrade_desc[] = {
 	},
 	[FTL_LAYOUT_REGION_TYPE_TRIM_MD] = {},
 	[FTL_LAYOUT_REGION_TYPE_TRIM_MD_MIRROR] = {},
-
 	[FTL_LAYOUT_REGION_TYPE_TRIM_LOG] = {
 		.latest_ver = FTL_TRIM_LOG_VERSION_CURRENT,
 		.count = FTL_TRIM_LOG_VERSION_CURRENT,
@@ -120,6 +119,26 @@ static struct ftl_layout_upgrade_desc_list layout_upgrade_desc[] = {
 		.count = FTL_TRIM_LOG_VERSION_CURRENT,
 		.desc = trim_log_upgrade_desc,
 	},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO1] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO2] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO3] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO4] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO5] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO6] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO7] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO8] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO9] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO10] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO11] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO12] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO13] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO14] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO15] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO16] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO17] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO18] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO19] = {},
+	[FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO20] = {},
 };
 
 SPDK_STATIC_ASSERT(sizeof(layout_upgrade_desc) / sizeof(*layout_upgrade_desc) ==

@@ -598,6 +598,26 @@ layout_fixup_nvc(struct spdk_ftl_dev *dev)
 		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_CKPT_GC_NEXT },
 		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_CKPT_COMP },
 		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_CKPT_COMP_NEXT },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO1 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO2 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO3 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO4 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO5 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO6 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO7 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO8 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO9 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO10 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO11 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO12 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO13 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO14 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO15 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO16 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO17 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO18 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO19 },
+		{ .type = FTL_LAYOUT_REGION_TYPE_P2L_LOG_IO20 },
 		{ .type = FTL_LAYOUT_REGION_TYPE_INVALID },
 	};
 
@@ -641,15 +661,15 @@ layout_fixup_nvc(struct spdk_ftl_dev *dev)
 static int
 filter_region_type_base(enum ftl_layout_region_type reg_type)
 {
-	// switch (reg_type) {
+	switch (reg_type) {
 	// case FTL_LAYOUT_REGION_TYPE_SB_BASE:
 	// case FTL_LAYOUT_REGION_TYPE_DATA_BASE:
-	// case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
-	// 	return 0;
+	case FTL_LAYOUT_REGION_TYPE_VALID_MAP:
+		return 0;
 
-	// default:
-	// 	return 1;
-	// }
+	default:
+		return 1;
+	}
 	return 1;
 }
 

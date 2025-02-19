@@ -24,6 +24,7 @@ write_rq_end(struct spdk_bdev_io *bdev_io, bool success, void *arg)
 
 	rq->success = success;
 	if (spdk_likely(rq->success)) {
+		ftl_abort();
 		ftl_p2l_ckpt_issue(rq);
 	} else {
 #ifdef SPDK_FTL_RETRY_ON_ERROR

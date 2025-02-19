@@ -3,13 +3,6 @@
 #include "ftl_io.h"
 #include "ftl_internal.h"
 
-bool is_bdev_compatible(struct spdk_ftl_dev *dev, struct spdk_bdev *bdev);
-bool is_chunk_active(struct spdk_ftl_dev *dev, uint64_t chunk_offset);
-int md_region_create(struct spdk_ftl_dev *dev, enum ftl_layout_region_type reg_type,
-		    uint32_t reg_version, size_t reg_blks);
-int md_region_open(struct spdk_ftl_dev *dev, enum ftl_layout_region_type reg_type, uint32_t reg_version,
-	        size_t entry_size, size_t entry_count, struct ftl_layout_region *region);
-
 /* ----------------------------算法初始化----------------------------------------*/
 void algo_info_pass_init(struct ftl_nv_cache *nv_cache);
 void algo_info_sepbit_init(struct ftl_nv_cache *nv_cache);

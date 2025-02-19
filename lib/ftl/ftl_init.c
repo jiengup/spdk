@@ -20,7 +20,6 @@
 #include "ftl_writer.h"
 #include "ftl_utils.h"
 #include "mngt/ftl_mngt.h"
-#include "utils/ftl_log.h"
 
 struct ftl_dev_init_ctx {
 	spdk_ftl_init_fn		cb_fn;

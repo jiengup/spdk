@@ -408,6 +408,7 @@ ftl_band_release_p2l_map(struct ftl_band *band)
 
 	if (p2l_map->ref_cnt == 0) {
 		if (p2l_map->p2l_ckpt) {
+			ftl_abort();
 			ftl_p2l_ckpt_release(band->dev, p2l_map->p2l_ckpt);
 			p2l_map->p2l_ckpt = NULL;
 		}
@@ -431,6 +432,7 @@ ftl_band_write_prep(struct ftl_band *band)
 		return -1;
 	}
 
+	ftl_abort();
 	band->p2l_map.p2l_ckpt = ftl_p2l_ckpt_acquire(dev);
 	band->md->p2l_md_region = ftl_p2l_ckpt_region_type(band->p2l_map.p2l_ckpt);
 	ftl_band_iter_init(band);

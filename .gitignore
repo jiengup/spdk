@@ -47,6 +47,8 @@ test/common/build_config.sh
 exp/job/*/*.job
 exp/result/*
 exp/plot/*/
+exp-0219/jobs/ALGO_*
+exp-0219/configs/ftl_*
 compile_commands.json
 .cache
 *core*
