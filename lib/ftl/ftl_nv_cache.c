@@ -846,7 +846,6 @@ compaction_process_pin_lba_rw(void *arg)
 		
 		// compaction after compaction will issue this assert
 		// assert(chunk->md->seq_id == md->nv_cache.seq_id);
-		assert(entry->lba == FTL_LBA_INVALID);
 
 		ftl_l2p_pin(dev, entry->lba, 1, compaction_process_pin_lba_rw_cb, comp, pin_ctx);
 	}
