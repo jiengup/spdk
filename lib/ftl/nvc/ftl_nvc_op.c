@@ -282,10 +282,7 @@ greedy_choose_chunk_for_compaction(struct ftl_nv_cache *nv_cache)
 	TAILQ_FOREACH_SAFE(nchunk, &nv_cache->chunk_full_list, entry, tchunk) {
 		uint64_t start = ftl_addr_from_nvc_offset(dev, nchunk->offset);
 		uint64_t end = start + (nv_cache->chunk_blocks - nv_cache->tail_md_chunk_blocks);
-		// if (nchunk->md->valid_count != ftl_bitmap_count_set_range(dev->valid_map, start, end)) {
-		// 	FTL_NOTICELOG(dev, "valid count: %"PRIu64", count set: %"PRIu64"\n", nchunk->md->valid_count, ftl_bitmap_count_set_range(dev->valid_map, start, end));
-		// }
-		// assert(nchunk->md->valid_count == ftl_bitmap_count_set_range(dev->valid_map, start, end));
+		assert(nchunk->md->valid_count == ftl_bitmap_count_set_range(dev->valid_map, start, end));
 		uint64_t valid_count = nchunk->md->valid_count;
 		if (valid_count < min_valid) {
 			min_valid = valid_count;

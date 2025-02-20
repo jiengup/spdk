@@ -179,7 +179,8 @@ ftl_dev_dump_bands(struct spdk_ftl_dev *dev)
 void
 ftl_dev_dump_stats(const struct spdk_ftl_dev *dev)
 {
-	uint64_t i, total = 0;
+	// uint64_t i, total = 0;
+	uint64_t i;
 	char uuid[SPDK_UUID_STRING_LEN];
 	double waf;
 	uint64_t write_user, write_total, write_comp, write_nvc_md, write_base_md, write_l2p;
@@ -193,14 +194,14 @@ ftl_dev_dump_stats(const struct spdk_ftl_dev *dev)
 
 	(void)limits;
 
-	if (!dev->bands) {
-		return;
-	}
+	// if (!dev->bands) {
+	// 	return;
+	// }
 
 	/* Count the number of valid LBAs */
-	for (i = 0; i < ftl_get_num_bands(dev); ++i) {
-		total += dev->bands[i].p2l_map.num_valid;
-	}
+	// for (i = 0; i < ftl_get_num_bands(dev); ++i) {
+	// 	total += dev->bands[i].p2l_map.num_valid;
+	// }
 
 	write_user = dev->stats.entries[FTL_STATS_TYPE_USER].write.blocks;
 	// write_total = write_user +
@@ -217,6 +218,7 @@ ftl_dev_dump_stats(const struct spdk_ftl_dev *dev)
 	spdk_uuid_fmt_lower(uuid, sizeof(uuid), &dev->conf.uuid);
 	FTL_NOTICELOG(dev, "\n");
 	// FTL_NOTICELOG(dev, "total valid LBAs:    %zu\n", total);
+	FTL_NOTICELOG(dev, "device name: 	   %s\n", dev->conf.name);
 	FTL_NOTICELOG(dev, "device UUID:         %s\n", uuid);
 	FTL_NOTICELOG(dev, "user writes:         %"PRIu64"\n", write_user);
 	FTL_NOTICELOG(dev, "compaction writes:   %"PRIu64"\n", write_comp);

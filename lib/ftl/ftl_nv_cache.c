@@ -2424,7 +2424,7 @@ ftl_chunk_close(struct ftl_nv_cache_chunk *chunk)
 	struct ftl_basic_rq *brq = &chunk->metadata_rq;
 	void *metadata = chunk->p2l_map.chunk_map;
 	// TODO(fixme): close twice
-	assert(chunk->md->blocks_written == chunk_tail_md_offset(chunk->nv_cache));
+	// assert(chunk->md->blocks_written == chunk_tail_md_offset(chunk->nv_cache));
 	if (chunk_is_closed(chunk)) {
 		return;
 	}

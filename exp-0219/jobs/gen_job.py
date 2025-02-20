@@ -10,7 +10,7 @@ SPDK_CONFIG_JSON_BASE = "/home/xgj/spdk/exp-0219/configs/ftl_algo_{}_OP_{}.json"
 BS = ["4k", "32k"]
 WM = ["rand"]
 OP = ["7", "20"]
-ALGO = ["single_group_greedy", "sepbit_gc"]
+ALGO = ["single_group_greedy", "sepbit_cb"]
 DIST = ["zipf:0.8", "zipf:1.2"]
 
 def erase_space(filep):

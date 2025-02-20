@@ -21,6 +21,5 @@ stonewall=1
 [job1]
 name=job1
 rw=randwrite
-runtime=3600s
-ramp_time=60s
+runtime=600s
 stonewall=1

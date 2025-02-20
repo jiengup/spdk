@@ -40,7 +40,7 @@ def set_ftl_group_num(data, ftl_group_num):
     if not change:
         raise ValueError("No FTL subsystem found")
     
-ALGO = ["single_group_greedy", "sepbit_gc"]
+ALGO = ["single_group_greedy", "sepbit_cb"]
 GROUP_NUM = [1, 6]
 OP = [7, 10, 15, 20]
 
