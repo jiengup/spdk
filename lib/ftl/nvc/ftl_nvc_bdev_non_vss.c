@@ -220,8 +220,8 @@ struct ftl_nv_cache_device_type nvc_bdev_single_group = {
 
 FTL_NV_CACHE_DEVICE_TYPE_REGISTER(nvc_bdev_single_group)
 
-struct ftl_nv_cache_device_type nvc_bdev_sepbit_cb = {
-	.name = "sepbit_cb",
+struct ftl_nv_cache_device_type nvc_bdev_sepbit22_cb = {
+	.name = "sepbit22_cb",
 	.features = {
 	},
 	.ops = {
@@ -234,8 +234,8 @@ struct ftl_nv_cache_device_type nvc_bdev_sepbit_cb = {
 		.setup_layout = setup_layout,
 		.algo_info_init = algo_info_sepbit_init,
 		.algo_info_update = algo_info_sepbit_update,
-		.get_user_io_tag = sepbit_chunk_get_user_io_tag,
-		.get_group_tag_for_compaction = get_sepbit_group_tag_for_compaction,
+		.get_user_io_tag = get_user_io_tag_th2,
+		.get_group_tag_for_compaction = th2_get_sepbit2_group_tag_for_compaction,
 		.choose_chunk_for_compaction = costbenefit_choose_chunk_for_compaction,
 		.md_layout_ops = {
 			.region_create = ftl_nvc_bdev_common_region_create,
@@ -247,4 +247,207 @@ struct ftl_nv_cache_device_type nvc_bdev_sepbit_cb = {
 	}
 };
 
-FTL_NV_CACHE_DEVICE_TYPE_REGISTER(nvc_bdev_sepbit_cb)
+FTL_NV_CACHE_DEVICE_TYPE_REGISTER(nvc_bdev_sepbit22_cb)
+
+struct ftl_nv_cache_device_type nvc_bdev_sepbit24_cb = {
+	.name = "sepbit24_cb",
+	.features = {
+	},
+	.ops = {
+		.init = init,
+		.deinit = deinit,
+		.on_chunk_open = on_chunk_open,
+		.on_chunk_closed = on_chunk_closed,
+		.is_bdev_compatible = is_bdev_compatible,
+		.is_chunk_active = ftl_nvc_bdev_common_is_chunk_active,
+		.setup_layout = setup_layout,
+		.algo_info_init = algo_info_sepbit_init,
+		.algo_info_update = algo_info_sepbit_update,
+		.get_user_io_tag = get_user_io_tag_th2,
+		.get_group_tag_for_compaction = th2_get_sepbit4_group_tag_for_compaction,
+		.choose_chunk_for_compaction = costbenefit_choose_chunk_for_compaction,
+		.md_layout_ops = {
+			.region_create = ftl_nvc_bdev_common_region_create,
+			.region_open = ftl_nvc_bdev_common_region_open,
+		},
+		.process = process,
+		.write = write_io,
+		.recover_open_chunk = recover_open_chunk
+	}
+};
+
+FTL_NV_CACHE_DEVICE_TYPE_REGISTER(nvc_bdev_sepbit24_cb)
+
+struct ftl_nv_cache_device_type nvc_bdev_sepbit44_cb = {
+	.name = "sepbit44_cb",
+	.features = {
+	},
+	.ops = {
+		.init = init,
+		.deinit = deinit,
+		.on_chunk_open = on_chunk_open,
+		.on_chunk_closed = on_chunk_closed,
+		.is_bdev_compatible = is_bdev_compatible,
+		.is_chunk_active = ftl_nvc_bdev_common_is_chunk_active,
+		.setup_layout = setup_layout,
+		.algo_info_init = algo_info_sepbit_init,
+		.algo_info_update = algo_info_sepbit_update,
+		.get_user_io_tag = get_user_io_tag_th4,
+		.get_group_tag_for_compaction = th4_get_sepbit4_group_tag_for_compaction,
+		.choose_chunk_for_compaction = costbenefit_choose_chunk_for_compaction,
+		.md_layout_ops = {
+			.region_create = ftl_nvc_bdev_common_region_create,
+			.region_open = ftl_nvc_bdev_common_region_open,
+		},
+		.process = process,
+		.write = write_io,
+		.recover_open_chunk = recover_open_chunk
+	}
+};
+
+FTL_NV_CACHE_DEVICE_TYPE_REGISTER(nvc_bdev_sepbit44_cb)
+
+struct ftl_nv_cache_device_type nvc_bdev_sepbit46_cb = {
+	.name = "sepbit46_cb",
+	.features = {
+	},
+	.ops = {
+		.init = init,
+		.deinit = deinit,
+		.on_chunk_open = on_chunk_open,
+		.on_chunk_closed = on_chunk_closed,
+		.is_bdev_compatible = is_bdev_compatible,
+		.is_chunk_active = ftl_nvc_bdev_common_is_chunk_active,
+		.setup_layout = setup_layout,
+		.algo_info_init = algo_info_sepbit_init,
+		.algo_info_update = algo_info_sepbit_update,
+		.get_user_io_tag = get_user_io_tag_th4,
+		.get_group_tag_for_compaction = th4_get_sepbit6_group_tag_for_compaction,
+		.choose_chunk_for_compaction = costbenefit_choose_chunk_for_compaction,
+		.md_layout_ops = {
+			.region_create = ftl_nvc_bdev_common_region_create,
+			.region_open = ftl_nvc_bdev_common_region_open,
+		},
+		.process = process,
+		.write = write_io,
+		.recover_open_chunk = recover_open_chunk
+	}
+};
+
+FTL_NV_CACHE_DEVICE_TYPE_REGISTER(nvc_bdev_sepbit46_cb)
+
+struct ftl_nv_cache_device_type nvc_bdev_mida22_cb = {
+	.name = "mida22_cb",
+	.features = {
+	},
+	.ops = {
+		.init = init,
+		.deinit = deinit,
+		.on_chunk_open = on_chunk_open,
+		.on_chunk_closed = on_chunk_closed,
+		.is_bdev_compatible = is_bdev_compatible,
+		.is_chunk_active = ftl_nvc_bdev_common_is_chunk_active,
+		.setup_layout = setup_layout,
+		.algo_info_init = algo_info_sepbit_init,
+		.algo_info_update = algo_info_sepbit_update,
+		.get_user_io_tag = get_user_io_tag_th2,
+		.get_group_tag_for_compaction = th2_get_mida2_group_tag_for_compaction,
+		.choose_chunk_for_compaction = costbenefit_choose_chunk_for_compaction,
+		.md_layout_ops = {
+			.region_create = ftl_nvc_bdev_common_region_create,
+			.region_open = ftl_nvc_bdev_common_region_open,
+		},
+		.process = process,
+		.write = write_io,
+		.recover_open_chunk = recover_open_chunk
+	}
+};
+
+FTL_NV_CACHE_DEVICE_TYPE_REGISTER(nvc_bdev_mida22_cb)
+
+struct ftl_nv_cache_device_type nvc_bdev_mida24_cb = {
+	.name = "mida24_cb",
+	.features = {
+	},
+	.ops = {
+		.init = init,
+		.deinit = deinit,
+		.on_chunk_open = on_chunk_open,
+		.on_chunk_closed = on_chunk_closed,
+		.is_bdev_compatible = is_bdev_compatible,
+		.is_chunk_active = ftl_nvc_bdev_common_is_chunk_active,
+		.setup_layout = setup_layout,
+		.algo_info_init = algo_info_sepbit_init,
+		.algo_info_update = algo_info_sepbit_update,
+		.get_user_io_tag = get_user_io_tag_th2,
+		.get_group_tag_for_compaction = th2_get_mida4_group_tag_for_compaction,
+		.choose_chunk_for_compaction = costbenefit_choose_chunk_for_compaction,
+		.md_layout_ops = {
+			.region_create = ftl_nvc_bdev_common_region_create,
+			.region_open = ftl_nvc_bdev_common_region_open,
+		},
+		.process = process,
+		.write = write_io,
+		.recover_open_chunk = recover_open_chunk
+	}
+};
+
+FTL_NV_CACHE_DEVICE_TYPE_REGISTER(nvc_bdev_mida24_cb)
+
+struct ftl_nv_cache_device_type nvc_bdev_mida44_cb = {
+	.name = "mida44_cb",
+	.features = {
+	},
+	.ops = {
+		.init = init,
+		.deinit = deinit,
+		.on_chunk_open = on_chunk_open,
+		.on_chunk_closed = on_chunk_closed,
+		.is_bdev_compatible = is_bdev_compatible,
+		.is_chunk_active = ftl_nvc_bdev_common_is_chunk_active,
+		.setup_layout = setup_layout,
+		.algo_info_init = algo_info_sepbit_init,
+		.algo_info_update = algo_info_sepbit_update,
+		.get_user_io_tag = get_user_io_tag_th4,
+		.get_group_tag_for_compaction = th4_get_mida4_group_tag_for_compaction,
+		.choose_chunk_for_compaction = costbenefit_choose_chunk_for_compaction,
+		.md_layout_ops = {
+			.region_create = ftl_nvc_bdev_common_region_create,
+			.region_open = ftl_nvc_bdev_common_region_open,
+		},
+		.process = process,
+		.write = write_io,
+		.recover_open_chunk = recover_open_chunk
+	}
+};
+
+FTL_NV_CACHE_DEVICE_TYPE_REGISTER(nvc_bdev_mida44_cb)
+
+struct ftl_nv_cache_device_type nvc_bdev_mida46_cb = {
+	.name = "mida46_cb",
+	.features = {
+	},
+	.ops = {
+		.init = init,
+		.deinit = deinit,
+		.on_chunk_open = on_chunk_open,
+		.on_chunk_closed = on_chunk_closed,
+		.is_bdev_compatible = is_bdev_compatible,
+		.is_chunk_active = ftl_nvc_bdev_common_is_chunk_active,
+		.setup_layout = setup_layout,
+		.algo_info_init = algo_info_sepbit_init,
+		.algo_info_update = algo_info_sepbit_update,
+		.get_user_io_tag = get_user_io_tag_th4,
+		.get_group_tag_for_compaction = th4_get_mida6_group_tag_for_compaction,
+		.choose_chunk_for_compaction = costbenefit_choose_chunk_for_compaction,
+		.md_layout_ops = {
+			.region_create = ftl_nvc_bdev_common_region_create,
+			.region_open = ftl_nvc_bdev_common_region_open,
+		},
+		.process = process,
+		.write = write_io,
+		.recover_open_chunk = recover_open_chunk
+	}
+};
+
+FTL_NV_CACHE_DEVICE_TYPE_REGISTER(nvc_bdev_mida46_cb)

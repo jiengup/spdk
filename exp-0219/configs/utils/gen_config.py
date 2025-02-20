@@ -1,6 +1,6 @@
 import json
 
-TEMPLATE_FILE = "template.json"
+TEMPLATE_FILE = "/home/xgj/spdk/exp-0219/configs/utils/template.json"
 
 def load_template():
     with open(TEMPLATE_FILE, "r") as f:
@@ -40,9 +40,17 @@ def set_ftl_group_num(data, ftl_group_num):
     if not change:
         raise ValueError("No FTL subsystem found")
     
-ALGO = ["single_group_greedy", "sepbit_cb"]
-GROUP_NUM = [1, 6]
-OP = [7, 10, 15, 20]
+ALGO = ["sepbit22_cb", 
+        "sepbit24_cb", 
+        "sepbit44_cb", 
+        "sepbit46_cb",
+        "mida22_cb",
+        "mida24_cb",
+        "mida44_cb",
+        "mida46_cb"]
+
+GROUP_NUM = [4, 6, 8, 10, 4, 6, 8, 10]
+OP = [15, 30]
 
 for algo, group_num in zip(ALGO, GROUP_NUM):
     for op in OP:
@@ -50,5 +58,5 @@ for algo, group_num in zip(ALGO, GROUP_NUM):
         set_ftl_op(data, op)
         set_ftl_algo(data, algo)
         set_ftl_group_num(data, group_num)
-        with open(f"ftl_algo_{algo}_OP_{op}.json", "w") as f:
+        with open(f"/home/xgj/spdk/exp-0219/configs/ftl_algo_{algo}_OP_{op}.json", "w") as f:
             json.dump(data, f, indent=2)
