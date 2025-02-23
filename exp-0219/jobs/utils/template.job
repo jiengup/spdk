@@ -14,7 +14,7 @@ filename=ftl0
 [precondition]
 name=precondition
 rw=write
-bs=128k
+bs=1m
 stonewall=1
 
 [job1]

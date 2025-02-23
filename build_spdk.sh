@@ -4,11 +4,12 @@ set -e
 
 git submodule update --init
 sudo apt-get update
-sudo apt-get install nvme-cli
-sudo nvme format --reset -b 4096 /dev/nvme1n1
-nvme format /dev/nvme1 --namespace-id=1 --lbaf=4 --reset
+sudo apt-get install -y nvme-cli
+sudo apt-get install -y clangd
 
-./scripts/pkgdep.sh
+sudo ./scripts/pkgdep.sh
+
+sudo ./scripts/setup.sh reset
 
 : ${NVME_DEV:=""}
 if [ -n "$NVME_DEV" ]; then
@@ -21,7 +22,11 @@ if [ -n "$NVME_DEV" ]; then
 fi
 
 : ${PCI_ALLOWED:=""}
-sudo HUGEMEM=131072 PCI_ALLOWED=$PCI_ALLOWED ./scripts/setup.sh 
+if [ -n "PCI_ALLOWED" ]; then
+  sudo HUGEMEM=131072 PCI_ALLOWED=$PCI_ALLOWED ./scripts/setup.sh || true
+else
+  echo "Warning: dont setup any PCIE NVMe SSD"
+fi
 
 wget https://github.com/axboe/fio/archive/refs/tags/fio-3.39.tar.gz
 tar -xvf fio-3.39.tar.gz
@@ -30,13 +35,9 @@ pushd fio
 ./configure
 make -j
 popd
+rm -f fio-3.39.tar.gz
 
 ./configure --enable-debug --with-fio=./fio
-
-# grand gbd sudo permission
-mv /usr/bin/gdb /usr/bin/gdb-ori
-cp scripts/gdb /usr/bin/gdb
-chmod +x /usr/bin/gdb
 
 chunk_mb=256
 chunk_blocks=$((chunk_mb * 1024 * 1024 / 4096))

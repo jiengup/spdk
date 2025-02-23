@@ -1,6 +1,13 @@
 import json
+import os
+import argparse
 
-TEMPLATE_FILE = "/home/xgj/spdk/exp-0219/configs/utils/template.json"
+parser = argparse.ArgumentParser(description='config generate script')
+parser.add_argument('-t', '--template', type=str, help='spdk config template to use', required=True)
+args = parser.parse_args()
+
+HOME_DIR = os.path.expanduser("~")
+TEMPLATE_FILE = f"{HOME_DIR}/spdk/exp-0219/configs/utils/{args.template}"
 
 def load_template():
     with open(TEMPLATE_FILE, "r") as f:
@@ -50,7 +57,7 @@ ALGO = ["sepbit22_cb",
         "mida46_cb"]
 
 GROUP_NUM = [4, 6, 8, 10, 4, 6, 8, 10]
-OP = [15, 30]
+OP = [14, 21]
 
 for algo, group_num in zip(ALGO, GROUP_NUM):
     for op in OP:
@@ -58,5 +65,5 @@ for algo, group_num in zip(ALGO, GROUP_NUM):
         set_ftl_op(data, op)
         set_ftl_algo(data, algo)
         set_ftl_group_num(data, group_num)
-        with open(f"/home/xgj/spdk/exp-0219/configs/ftl_algo_{algo}_OP_{op}.json", "w") as f:
+        with open(f"{HOME_DIR}/spdk/exp-0219/configs/ftl_algo_{algo}_OP_{op}.json", "w") as f:
             json.dump(data, f, indent=2)

@@ -10,7 +10,7 @@ FIO_JOB_FILE_BASE = "TRACE_ALGO_{}_OP_{}.job"
 SPDK_CONFIF_DIR = f"{HOME_DIR}/spdk/exp-0219/configs"
 SPDK_CONFIG_JSON_BASE = "ftl_algo_{}_OP_{}.json"
 
-OP = ["15"]
+OP = ["14"]
 
 ALGO = ["sepbit22_cb",
         "sepbit24_cb",
