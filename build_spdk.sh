@@ -1,5 +1,4 @@
 #!/bin/bash
-LIMITS_CONF="/etc/security/limits.conf"
 
 set -e
 
@@ -11,19 +10,37 @@ nvme format /dev/nvme1 --namespace-id=1 --lbaf=4 --reset
 
 ./scripts/pkgdep.sh
 
-if ! grep -q "${USER}.*memlock" "$LIMITS_CONF"; then
-  echo -e "\n${USER}    soft    memlock    unlimited" >> "$LIMITS_CONF"
-  echo -e "${USER}    hard    memlock    unlimited" >> "$LIMITS_CONF"
+: ${NVME_DEV:=""}
+if [ -n "$NVME_DEV" ]; then
+  while [ ! -e "${NVME_DEV}n1" ]; do
+    echo "${NVME_DEV}n1 not found. Waiting..."
+    sleep 1
+  done
+  echo "Initializing NVMe disk..."
+  sudo nvme format --force --reset -b 4096 "${NVME_DEV}n1"
 fi
 
-sudo PCI_ALLOWED=0000:c6:00.0 ./scripts/setup.sh 
+: ${PCI_ALLOWED:=""}
+sudo HUGEMEM=131072 PCI_ALLOWED=$PCI_ALLOWED ./scripts/setup.sh 
 
-./configure --enable-debug --with-fio=/dataset/fio
+wget https://github.com/axboe/fio/archive/refs/tags/fio-3.39.tar.gz
+tar -xvf fio-3.39.tar.gz
+mv fio-fio-3.39 fio
+pushd fio
+./configure
+make -j
+popd
+
+./configure --enable-debug --with-fio=./fio
 
 # grand gbd sudo permission
 mv /usr/bin/gdb /usr/bin/gdb-ori
 cp scripts/gdb /usr/bin/gdb
 chmod +x /usr/bin/gdb
+
+chunk_mb=256
+chunk_blocks=$((chunk_mb * 1024 * 1024 / 4096))
+SPDK_FTL_ZONE_EMU_BLOCKS=${chunk_blocks} make -j
 
 # install vscode extensions
 if command -v code &> /dev/null; then

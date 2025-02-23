@@ -2,10 +2,12 @@ import configparser
 import itertools
 import os
 
-JOB_TEMPLATE_FILE = "/home/xgj/spdk/exp-0219/jobs/utils/template.job"
-JOB_OUT_DIR = "/home/xgj/spdk/exp-0219/jobs"
+HOME_DIR = os.path.expanduser("~")
+JOB_TEMPLATE_FILE = f"{HOME_DIR}/spdk/exp-0219/jobs/utils/template.job"
+JOB_OUT_DIR = f"{HOME_DIR}/spdk/exp-0219/jobs"
 FIO_JOB_FILE_BASE = "ALGO_{}_BS_{}_WP_{}_OP_{}_DIS_{}.job"
-SPDK_CONFIG_JSON_BASE = "/home/xgj/spdk/exp-0219/configs/ftl_algo_{}_OP_{}.json"
+CONFIG_JSON_DIR = f"{HOME_DIR}/spdk/exp-0219/configs"
+SPDK_CONFIG_JSON_BASE = "ftl_algo_{}_OP_{}.json"
 
 BS = ["64k"]
 WM = ["rand"]
@@ -37,6 +39,7 @@ for dist, algo,  bs, wm, op in itertools.product(DIST, ALGO, BS, WM, OP):
 
     job_file = FIO_JOB_FILE_BASE.format(algo, bs, wm, op, dist)
     spdk_json_conf = SPDK_CONFIG_JSON_BASE.format(algo, op)
+    spdk_json_conf = os.path.join(CONFIG_JSON_DIR, spdk_json_conf)
     config.set('global', 'spdk_json_conf', spdk_json_conf)
     if wm == "rand":
         config.set('job1', 'rw', 'randwrite')

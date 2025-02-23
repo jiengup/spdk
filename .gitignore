@@ -54,3 +54,4 @@ exp-0219/result/*
 compile_commands.json
 .cache
 *core*
+fio
