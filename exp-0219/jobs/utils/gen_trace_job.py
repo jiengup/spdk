@@ -2,13 +2,11 @@ import configparser
 import itertools
 import os
 
-JOB_TEMPLATE_FILE = "/home/xgj/spdk/exp-0219/jobs/utils/template.job"
+JOB_TEMPLATE_FILE = "/home/xgj/spdk/exp-0219/jobs/utils/template_trace.job"
 JOB_OUT_DIR = "/home/xgj/spdk/exp-0219/jobs"
-FIO_JOB_FILE_BASE = "ALGO_{}_BS_{}_WP_{}_OP_{}_DIS_{}.job"
+FIO_JOB_FILE_BASE = "TRACE_ALGO_{}_OP_{}.job"
 SPDK_CONFIG_JSON_BASE = "/home/xgj/spdk/exp-0219/configs/ftl_algo_{}_OP_{}.json"
 
-BS = ["64k"]
-WM = ["rand"]
 OP = ["15"]
 
 ALGO = ["sepbit22_cb",
@@ -20,8 +18,6 @@ ALGO = ["sepbit22_cb",
         "mida44_cb",
         "mida46_cb"]
 
-DIST = ["zipf:0.8", "zipf:1.1"]
-
 def erase_space(filep):
     with open(filep, 'r') as file:
         lines = file.readlines()
@@ -31,24 +27,13 @@ def erase_space(filep):
     with open(filep, 'w') as file:
         file.writelines(processed_lines)
 
-for dist, algo,  bs, wm, op in itertools.product(DIST, ALGO, BS, WM, OP):
+for algo, op in itertools.product(ALGO, OP):
     config = configparser.ConfigParser()
     config.read(JOB_TEMPLATE_FILE)
 
-    job_file = FIO_JOB_FILE_BASE.format(algo, bs, wm, op, dist)
+    job_file = FIO_JOB_FILE_BASE.format(algo, op)
     spdk_json_conf = SPDK_CONFIG_JSON_BASE.format(algo, op)
     config.set('global', 'spdk_json_conf', spdk_json_conf)
-    if wm == "rand":
-        config.set('job1', 'rw', 'randwrite')
-    elif wm == "seq":
-        config.set('job1', 'rw', "write")
-    else:
-        raise RuntimeError
-    
-    if dist != "uni":
-        config.set('job1', "random_distribution", dist)
-    
-    config.set('job1', 'bs', bs)
     
     job_file_p = os.path.join(JOB_OUT_DIR, job_file)
     
