@@ -1,22 +1,28 @@
 #!/bin/bash
 
 exp_prefix=(\
-ALGO_mida22_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.1.job
-ALGO_mida24_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.1.job
-ALGO_mida44_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.1.job
-ALGO_mida46_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.1.job
-ALGO_sepbit22_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.1.job
-ALGO_sepbit24_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.1.job
-ALGO_sepbit44_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.1.job
-ALGO_sepbit46_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.1.job
-ALGO_mida22_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
-ALGO_mida24_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
-ALGO_mida44_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
-ALGO_mida46_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
+ALGO_single_group_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
+ALGO_sepgc11_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
+ALGO_sepgc21_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
 ALGO_sepbit22_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
+ALGO_sepbit23_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
 ALGO_sepbit24_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
-ALGO_sepbit44_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
-ALGO_sepbit46_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
+ALGO_sepbit26_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
+ALGO_mida22_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
+ALGO_mida23_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
+ALGO_mida24_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
+ALGO_mida26_cb_BS_64k_WP_rand_OP_14_DIS_zipf:0.8.job
+ALGO_single_group_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
+ALGO_sepgc11_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
+ALGO_sepgc21_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
+ALGO_sepbit22_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
+ALGO_sepbit23_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
+ALGO_sepbit24_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
+ALGO_sepbit26_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
+ALGO_mida22_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
+ALGO_mida23_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
+ALGO_mida24_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
+ALGO_mida26_cb_BS_64k_WP_rand_OP_14_DIS_zipf:1.2.job
             )
 
 for exp in "${exp_prefix[@]}"; do
