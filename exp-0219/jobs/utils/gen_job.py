@@ -14,19 +14,12 @@ BS = ["64k"]
 WM = ["rand"]
 OP = ["14"]
 
-ALGO = ["single_group_cb",
-        "sepgc11_cb",
-        "sepgc21_cb",
-        "sepbit22_cb",
-        "sepbit23_cb",
-        "sepbit24_cb",
-        "sepbit26_cb",
-        "mida22_cb",
-        "mida23_cb",
-        "mida24_cb",
-        "mida26_cb"]
+ALGO = ["sepbit44_cb",
+        "sepbit46_cb",
+        "mida44_cb",
+        "mida46_cb"]
 
-DIST = ["zipf:0.8", "zipf:1.2"]
+DIST = ["zipf:0.8"]
 
 def erase_space(filep):
     with open(filep, 'r') as file:

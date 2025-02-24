@@ -50,6 +50,7 @@ exp/plot/*/
 exp-0219/jobs/*.job
 exp-0219/configs/*.json
 exp-0219/plot/result
+exp-0219/result2
 exp-0219/result/*
 compile_commands.json
 .cache

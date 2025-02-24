@@ -131,11 +131,11 @@ get_user_io_tag_th4(struct spdk_ftl_dev *dev, struct ftl_io *io)
 	assert(io->num_blocks != unseen_lbas);
 	livespan /= (io->num_blocks - unseen_lbas);
 
-	if (livespan < nv_cache->sepbit_info.threshold / 8) {
+	if (livespan < nv_cache->sepbit_info.threshold / 16) {
 		return 0;
 	} else if (livespan < nv_cache->sepbit_info.threshold / 4) {
 		return 1;
-	} else if (livespan < nv_cache->sepbit_info.threshold / 2) {
+	} else if (livespan < nv_cache->sepbit_info.threshold * 4) {
 		return 2;
 	} else {
 		return 3;
