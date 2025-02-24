@@ -5,6 +5,7 @@
 #include "utils/ftl_layout_tracker_bdev.h"
 #include "ftl_nvc_op.h"
 #include <stdlib.h>
+#include <sys/types.h>
 #include <time.h>
 
 // ----------------------algo init------------------------------------
@@ -143,9 +144,21 @@ get_user_io_tag_th4(struct spdk_ftl_dev *dev, struct ftl_io *io)
 
 // --------------------GC IO grouping--------------------------------
 uint8_t
-get_single_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
+get_0tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
 {
     return 0;
+}
+
+uint8_t
+get_1tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
+{
+	return 1;
+}
+
+uint8_t
+get_2tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
+{
+	return 2;
 }
 
 uint8_t
@@ -203,6 +216,62 @@ th2_get_sepbit2_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct f
 }
 
 uint8_t
+th2_get_sepbit3_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
+{
+	struct ftl_rq_entry *entry;
+	struct ftl_nv_cache_chunk *chunk;
+	struct spdk_ftl_dev *dev = SPDK_CONTAINEROF(nv_cache, struct spdk_ftl_dev, nv_cache);
+	uint64_t *lba_timestamp_table = nv_cache->lba_timestamp_table;
+	uint64_t lba;
+
+	// assert(!strcmp(dev->conf.algo, "sepbit"));
+	assert(nv_cache->traffic_group_num == 5);
+	assert(rq->iter.count);
+
+	uint32_t cnt[5];
+	for (int i = 2; i < 5; i++) {
+		cnt[i] = 0;
+	}
+	uint32_t validcnt = 0;
+	
+	FTL_RQ_ENTRY_LOOP(rq, entry, rq->iter.count) {
+		lba = entry->lba;
+		assert(lba < dev->num_lbas);
+		if (lba == FTL_LBA_INVALID) {
+			continue;
+		}
+		validcnt ++;
+		chunk = (struct ftl_nv_cache_chunk*)(entry->owner.priv);
+		assert(chunk != NULL);
+		assert(chunk->md->tag != FTL_TAG_INVALID);
+		if (chunk->md->tag == 0) {
+			cnt[2] ++;
+		} else {
+			assert(lba_timestamp_table[lba] != UINT64_MAX);
+			uint64_t livespan = ftl_get_timestamp(dev);
+			assert(lba_timestamp_table[lba] < livespan);
+			livespan -= lba_timestamp_table[lba];
+			
+			if (livespan < 8 * nv_cache->sepbit_info.threshold) {
+				cnt[3] ++;
+			} else {
+				cnt[4] ++;
+			}
+		}
+	}
+	
+	uint32_t max_cnt = 0;
+	uint8_t tag = 0;
+	for (int i = 2; i < 5; i++) {
+		if (max_cnt < cnt[i]) {
+			max_cnt = cnt[i];
+			tag = i;
+		}
+	}
+	return tag;
+}
+
+uint8_t
 th2_get_sepbit4_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
 {
 	struct ftl_rq_entry *entry;
@@ -249,13 +318,71 @@ th2_get_sepbit4_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct f
 		}
 	}
 	
-	if (cnt[2] == validcnt) {
-		return 2;
+	uint32_t max_cnt = 0;
+	uint8_t tag = 0;
+	for (int i = 2; i < 6; i++) {
+		if (max_cnt < cnt[i]) {
+			max_cnt = cnt[i];
+			tag = i;
+		}
+	}
+	return tag;
+}
+
+uint8_t
+th2_get_sepbit6_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
+{
+	struct ftl_rq_entry *entry;
+	struct ftl_nv_cache_chunk *chunk;
+	struct spdk_ftl_dev *dev = SPDK_CONTAINEROF(nv_cache, struct spdk_ftl_dev, nv_cache);
+	uint64_t *lba_timestamp_table = nv_cache->lba_timestamp_table;
+	uint64_t lba;
+
+	// assert(!strcmp(dev->conf.algo, "sepbit"));
+	assert(nv_cache->traffic_group_num == 8);
+	assert(rq->iter.count);
+
+	uint32_t cnt[8];
+	for (int i = 2; i < 8; i++) {
+		cnt[i] = 0;
+	}
+	uint32_t validcnt = 0;
+	
+	FTL_RQ_ENTRY_LOOP(rq, entry, rq->iter.count) {
+		lba = entry->lba;
+		assert(lba < dev->num_lbas);
+		if (lba == FTL_LBA_INVALID) {
+			continue;
+		}
+		validcnt ++;
+		chunk = (struct ftl_nv_cache_chunk*)(entry->owner.priv);
+		assert(chunk != NULL);
+		assert(chunk->md->tag != FTL_TAG_INVALID);
+		if (chunk->md->tag == 0) {
+			cnt[2] ++;
+		} else {
+			assert(lba_timestamp_table[lba] != UINT64_MAX);
+			uint64_t livespan = ftl_get_timestamp(dev);
+			assert(lba_timestamp_table[lba] < livespan);
+			livespan -= lba_timestamp_table[lba];
+			
+			if (livespan < 2 * nv_cache->sepbit_info.threshold) {
+				cnt[3] ++;
+			} else if (livespan < 4 * nv_cache->sepbit_info.threshold) {
+				cnt[4] ++;
+			} else if (livespan < 8 * nv_cache->sepbit_info.threshold) {
+				cnt[5] ++;
+			} else if(livespan < 16 * nv_cache->sepbit_info.threshold) {
+				cnt[6] ++;
+			} else {
+				cnt[7] ++;
+			}
+		}
 	}
 	
 	uint32_t max_cnt = 0;
 	uint8_t tag = 0;
-	for (int i = 3; i < 6; i++) {
+	for (int i = 2; i < 8; i++) {
 		if (max_cnt < cnt[i]) {
 			max_cnt = cnt[i];
 			tag = i;
@@ -385,6 +512,50 @@ th4_get_sepbit6_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct f
 }
 
 uint8_t
+th2_get_mida3_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
+{
+	struct ftl_rq_entry *entry;
+	struct ftl_nv_cache_chunk *chunk;
+	uint64_t lba;
+
+	assert(rq->iter.count);
+	assert(nv_cache->traffic_group_num == 5);
+
+	uint32_t cnt[5];
+	for (int i = 2; i < 5; i++) {
+		cnt[i] = 0;
+	}
+	
+	FTL_RQ_ENTRY_LOOP(rq, entry, rq->iter.count) {
+		lba = entry->lba;
+		if (lba == FTL_LBA_INVALID) {
+			continue;
+		}
+		chunk = (struct ftl_nv_cache_chunk*)(entry->owner.priv);
+		assert(chunk != NULL);
+		assert(chunk->md->tag != FTL_TAG_INVALID);
+		if (chunk->md->tag == 0) {
+			cnt[2] ++;
+		} else if(chunk->md->tag == 4) {
+			cnt[4] ++;
+		} else {
+			cnt[chunk->md->tag+1] ++;
+		}
+	}
+
+	uint32_t max_cnt = 0;
+	uint8_t tag = 0;
+	for (int i = 2; i < 5; i++) {
+		if (max_cnt < cnt[i]) {
+			max_cnt = cnt[i];
+			tag = i;
+		}
+	}
+	return tag;
+}
+
+
+uint8_t
 th2_get_mida2_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
 {
 	struct ftl_rq_entry *entry;
@@ -469,6 +640,50 @@ th2_get_mida4_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl
 	}
 	return tag;
 }
+
+uint8_t
+th2_get_mida6_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)
+{
+	struct ftl_rq_entry *entry;
+	struct ftl_nv_cache_chunk *chunk;
+	uint64_t lba;
+
+	assert(rq->iter.count);
+	assert(nv_cache->traffic_group_num == 8);
+
+	uint32_t cnt[8];
+	for (int i = 2; i < 8; i++) {
+		cnt[i] = 0;
+	}
+	
+	FTL_RQ_ENTRY_LOOP(rq, entry, rq->iter.count) {
+		lba = entry->lba;
+		if (lba == FTL_LBA_INVALID) {
+			continue;
+		}
+		chunk = (struct ftl_nv_cache_chunk*)(entry->owner.priv);
+		assert(chunk != NULL);
+		assert(chunk->md->tag != FTL_TAG_INVALID);
+		if (chunk->md->tag == 0) {
+			cnt[2] ++;
+		} else if(chunk->md->tag == 7) {
+			cnt[7] ++;
+		} else {
+			cnt[chunk->md->tag+1] ++;
+		}
+	}
+
+	uint32_t max_cnt = 0;
+	uint8_t tag = 0;
+	for (int i = 2; i < 8; i++) {
+		if (max_cnt < cnt[i]) {
+			max_cnt = cnt[i];
+			tag = i;
+		}
+	}
+	return tag;
+}
+
 
 uint8_t
 th4_get_mida4_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq)

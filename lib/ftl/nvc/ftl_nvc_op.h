@@ -17,17 +17,22 @@ uint8_t get_user_io_tag_th2(struct spdk_ftl_dev *dev, struct ftl_io *io);
 uint8_t get_user_io_tag_th4(struct spdk_ftl_dev *dev, struct ftl_io *io);
 
 /* -----------------------compaction重写分流--------------------------------------*/
-uint8_t get_single_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
+uint8_t get_0tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
+uint8_t get_1tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
+uint8_t get_2tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 uint8_t get_random_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
-uint8_t get_sepgc_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 
 uint8_t th2_get_mida2_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
+uint8_t th2_get_mida3_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 uint8_t th2_get_mida4_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
+uint8_t th2_get_mida6_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 uint8_t th4_get_mida4_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 uint8_t th4_get_mida6_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 
 uint8_t th2_get_sepbit2_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
+uint8_t th2_get_sepbit3_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 uint8_t th2_get_sepbit4_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
+uint8_t th2_get_sepbit6_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 uint8_t th4_get_sepbit4_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 uint8_t th4_get_sepbit6_group_tag_for_compaction(struct ftl_nv_cache *nv_cache, struct ftl_rq *rq);
 

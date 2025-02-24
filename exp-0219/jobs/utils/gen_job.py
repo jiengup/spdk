@@ -14,16 +14,19 @@ BS = ["64k"]
 WM = ["rand"]
 OP = ["14"]
 
-ALGO = ["sepbit22_cb",
+ALGO = ["single_group_cb",
+        "sepgc11_cb",
+        "sepgc21_cb",
+        "sepbit22_cb",
+        "sepbit23_cb",
         "sepbit24_cb",
-        "sepbit44_cb",
-        "sepbit46_cb",
+        "sepbit26_cb",
         "mida22_cb",
+        "mida23_cb",
         "mida24_cb",
-        "mida44_cb",
-        "mida46_cb"]
+        "mida26_cb"]
 
-DIST = ["zipf:0.8", "zipf:1.1"]
+DIST = ["zipf:0.8", "zipf:1.2"]
 
 def erase_space(filep):
     with open(filep, 'r') as file:
@@ -55,6 +58,7 @@ for dist, algo,  bs, wm, op in itertools.product(DIST, ALGO, BS, WM, OP):
     
     config.set('job1', 'bs', bs)
     
+    print(job_file)
     job_file_p = os.path.join(JOB_OUT_DIR, job_file)
     
     with open(job_file_p, "w") as configf:

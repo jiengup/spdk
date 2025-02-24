@@ -47,17 +47,20 @@ def set_ftl_group_num(data, ftl_group_num):
     if not change:
         raise ValueError("No FTL subsystem found")
     
-ALGO = ["sepbit22_cb", 
-        "sepbit24_cb", 
-        "sepbit44_cb", 
-        "sepbit46_cb",
+ALGO = ["single_group_cb",
+        "sepgc11_cb",
+        "sepgc21_cb",
+        "sepbit22_cb",
+        "sepbit23_cb",
+        "sepbit24_cb",
+        "sepbit26_cb",
         "mida22_cb",
+        "mida23_cb",
         "mida24_cb",
-        "mida44_cb",
-        "mida46_cb"]
+        "mida26_cb"]
 
-GROUP_NUM = [4, 6, 8, 10, 4, 6, 8, 10]
-OP = [14, 21]
+GROUP_NUM = [1, 2, 3, 4, 5, 6, 8, 4, 5, 6, 8]
+OP = [14]
 
 for algo, group_num in zip(ALGO, GROUP_NUM):
     for op in OP:
