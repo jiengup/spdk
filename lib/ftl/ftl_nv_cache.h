@@ -52,7 +52,6 @@
 
 #define FTL_MAX_OPEN_CHUNK_FACTOR 200
 #define FTL_FREE_COMPACTION_THRESHOLD 10
-#define FTL_MAX_GROUP_NUM 10
 
 struct ftl_nvcache_restore;
 typedef void (*ftl_nv_cache_restore_fn)(struct ftl_nvcache_restore *, int, void *cb_arg);
@@ -124,6 +123,7 @@ struct ftl_nv_cache_chunk {
 	uint64_t offset;
 
 	uint64_t idx;
+	uint64_t partition_idx;
 
 	/* P2L map */
 	struct ftl_p2l_map p2l_map;
@@ -197,6 +197,7 @@ struct ftl_nv_cache {
 	uint64_t chunk_count;
 
 	/* Current processed chunk */
+#define FTL_MAX_GROUP_NUM 10
 	struct ftl_nv_cache_chunk *chunk_current[FTL_MAX_GROUP_NUM];
 
 	uint64_t max_open_chunks;
@@ -242,6 +243,9 @@ struct ftl_nv_cache {
 	double compaction_sma;
 
 	uint8_t traffic_group_num;
+	uint8_t partition_num;
+#define FTL_NV_CACHE_MAX_PARTITION_NUM 4
+	uint64_t partition_chunk_count[FTL_NV_CACHE_MAX_PARTITION_NUM];
 
 #define FTL_NV_CACHE_COMPACTION_SMA_N (FTL_NV_CACHE_NUM_COMPACTORS * 2)
 	/* Circular buffer holding values for calculating compaction SMA */

@@ -35,7 +35,18 @@ write_io_cb(struct spdk_bdev_io *bdev_io, bool success, void *cb_arg)
 {
 	struct ftl_io *io = cb_arg;
 	struct ftl_nv_cache *nv_cache = &io->dev->nv_cache;
-	ftl_stats_bdev_io_completed(io->dev, FTL_STATS_TYPE_USER, bdev_io);
+	struct ftl_nv_cache_chunk *chunk;
+	struct spdk_ftl_dev *dev;
+
+	chunk = io->nv_cache_chunk;
+	assert(chunk != NULL);
+	dev = io->dev;
+
+	ftl_stats_bdev_io_completed(dev, FTL_STATS_TYPE_USER, bdev_io);
+	dev->stats.partition_user_entries[chunk->partition_idx].write.interval_blocks += bdev_io->u.bdev.num_blocks;
+	dev->stats.partition_user_entries[chunk->partition_idx].write.blocks += bdev_io->u.bdev.num_blocks;
+	dev->stats.partition_user_entries[chunk->partition_idx].write.interval_ios++;
+	dev->stats.partition_user_entries[chunk->partition_idx].write.ios++;
 	spdk_bdev_free_io(bdev_io);
 	ftl_mempool_put(nv_cache->md_pool, io->md);
 	ftl_nv_cache_write_complete(io, success);

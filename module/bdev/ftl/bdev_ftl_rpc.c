@@ -58,6 +58,10 @@ static const struct spdk_json_object_decoder rpc_bdev_ftl_create_decoders[] = {
 		"group_num", offsetof(struct spdk_ftl_conf, group_num),
 		spdk_json_decode_uint8, true
 	},
+	{
+		"partition_num", offsetof(struct spdk_ftl_conf, partition_num),
+		spdk_json_decode_uint8, true
+	}
 };
 
 static void

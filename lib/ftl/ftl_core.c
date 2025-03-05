@@ -33,7 +33,17 @@ ftl_io_cmpl_cb(struct spdk_bdev_io *bdev_io, bool success, void *cb_arg)
 	struct ftl_io *io = cb_arg;
 	struct spdk_ftl_dev *dev = io->dev;
 
+	struct ftl_nv_cache_chunk *chunk;
+
+	chunk = io->nv_cache_chunk;
+	assert(chunk != NULL);
+	dev = io->dev;
+
 	ftl_stats_bdev_io_completed(dev, FTL_STATS_TYPE_USER, bdev_io);
+	dev->stats.partition_user_entries[chunk->partition_idx].write.interval_blocks += bdev_io->u.bdev.num_blocks;
+	dev->stats.partition_user_entries[chunk->partition_idx].write.blocks += bdev_io->u.bdev.num_blocks;
+	dev->stats.partition_user_entries[chunk->partition_idx].write.interval_ios++;
+	dev->stats.partition_user_entries[chunk->partition_idx].write.ios++;
 
 	if (spdk_unlikely(!success)) {
 		io->status = -EIO;
@@ -826,6 +836,16 @@ ftl_show_stat(struct spdk_ftl_dev *dev)
 		dev->stats.entries[i].read.interval_blocks = 0;
 		dev->stats.entries[i].write.interval_ios = 0;
 		dev->stats.entries[i].write.interval_blocks = 0;
+		for (size_t i = 0; i<dev->conf.partition_num; i++) {
+			dev->stats.partition_cmp_entries[i].read.interval_ios = 0;
+			dev->stats.partition_cmp_entries[i].read.interval_blocks = 0;
+			dev->stats.partition_cmp_entries[i].write.interval_ios = 0;
+			dev->stats.partition_cmp_entries[i].write.interval_blocks = 0;
+			dev->stats.partition_user_entries[i].read.interval_ios = 0;
+			dev->stats.partition_user_entries[i].read.interval_blocks = 0;
+			dev->stats.partition_user_entries[i].write.interval_ios = 0;
+			dev->stats.partition_user_entries[i].write.interval_blocks = 0;
+		}
 	}
 	dev->show_stat.start_tsc = tsc;
 }

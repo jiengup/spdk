@@ -227,6 +227,15 @@ ftl_dev_dump_stats(const struct spdk_ftl_dev *dev)
 	FTL_NOTICELOG(dev, "L2P writes:          %"PRIu64"\n", write_l2p);
 	FTL_NOTICELOG(dev, "total writes:        %"PRIu64"\n", write_total);
 	FTL_NOTICELOG(dev, "WAF:                 %.4lf\n", waf);
+	for (size_t i = 0; i<dev->conf.partition_num; i++) {
+		write_user = dev->stats.partition_user_entries[i].write.blocks;
+		write_comp = dev->stats.partition_cmp_entries[i].write.blocks;
+		write_total = write_user + write_comp;
+		FTL_NOTICELOG(dev, "PARTITION:           %"PRIu64"\n", i);
+		FTL_NOTICELOG(dev, "user writes:         %"PRIu64"\n", write_user);
+		FTL_NOTICELOG(dev, "compaction writes:   %"PRIu64"\n", write_comp);
+		FTL_NOTICELOG(dev, "WAF:                 %.4lf\n", waf);
+	}
 #ifdef DEBUG
 	FTL_NOTICELOG(dev, "limits:\n");
 	for (i = 0; i < SPDK_FTL_LIMIT_MAX; ++i) {

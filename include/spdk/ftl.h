@@ -73,6 +73,9 @@ struct ftl_stats {
 	uint64_t		io_activity_total;
 
 	struct ftl_stats_entry	entries[FTL_STATS_TYPE_MAX];
+#define FTL_MAX_PRITITION_NUM 4
+	struct ftl_stats_entry  partition_cmp_entries[FTL_MAX_PRITITION_NUM];
+	struct ftl_stats_entry  partition_user_entries[FTL_MAX_PRITITION_NUM];
 };
 
 typedef void (*spdk_ftl_stats_fn)(struct ftl_stats *stats, void *cb_arg);
@@ -130,7 +133,7 @@ struct spdk_ftl_conf {
 	bool					verbose_mode;
 
 	/* Hole at bytes 0x66 - 0x67. */
-	uint8_t					reserved[8];
+	uint8_t					reserved[2];
 
 	/* Name of base block device (zoned or non-zoned) */
 
@@ -143,9 +146,10 @@ struct spdk_ftl_conf {
 	bool					fast_shutdown;
 
 	/* Hole at bytes 0x79 - 0x7f. */
-	// uint8_t					reserved2[7];
+	uint8_t					reserved2[5];
 	// uint8_t					reserved2[1];
 	uint8_t					group_num;
+	uint8_t					partition_num;
 
 	/*
 	 * The size of spdk_ftl_conf according to the caller of this library is used for ABI

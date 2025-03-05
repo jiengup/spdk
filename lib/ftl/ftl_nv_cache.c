@@ -257,12 +257,13 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	FTL_NOTICELOG(dev, "NV cache chunk tail md offset: %"PRIu64"\n", chunk_tail_md_offset(nv_cache));
 	nv_cache->traffic_group_num = dev->conf.group_num;
 	FTL_NOTICELOG(dev, "NV cache traffic group num: %"PRIu8"\n", nv_cache->traffic_group_num);
+	nv_cache->partition_num = dev->conf.partition_num;
+	FTL_NOTICELOG(dev, "NV cache partition_num: %"PRIu8"\n", nv_cache->partition_num);
 	nv_cache->max_open_chunks = spdk_divide_round_up(nv_cache->traffic_group_num * FTL_MAX_OPEN_CHUNK_FACTOR, 
 													 100);
 	assert(nv_cache->max_open_chunks <= nv_cache->chunk_count);
 	FTL_NOTICELOG(dev, "NV cache max open chunks: %"PRIu64"\n", nv_cache->max_open_chunks);
 	FTL_NOTICELOG(dev, "Bdev num lbas: %"PRIu64"\n", dev->num_lbas);
-
 
 	/* Allocate chunks */
 	nv_cache->chunks = calloc(nv_cache->chunk_count,
@@ -312,6 +313,26 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	assert(offset <= nvc_data_offset(nv_cache) + nvc_data_blocks(nv_cache));
 
 	uint64_t usable_chunks = nv_cache->chunk_count - nv_cache->chunk_inactive_count;
+	chunk = nv_cache->chunks;
+	uint8_t chunks_per_partition = usable_chunks / nv_cache->partition_num;
+	uint8_t current_partition = 0;
+	for (i=0; i<nv_cache->partition_num; i++) {
+		nv_cache->partition_chunk_count[i] = 0;
+	}
+	for (i=0; i < usable_chunks; i++, chunk++) {
+		chunk->partition_idx = current_partition;
+		nv_cache->partition_chunk_count[chunk->partition_idx] ++;
+		if ((i + 1) % chunks_per_partition == 0) {
+			current_partition++;
+		}
+		if (current_partition >= nv_cache->partition_num) {
+			current_partition = nv_cache->partition_num - 1;
+		}
+		assert(nv_cache->nvc_type->ops.is_chunk_active(dev, chunk->offset));
+	}
+	for (i=0; i<nv_cache->partition_num; i++) {
+		FTL_NOTICELOG(dev, "NV cache partition %"PRIu64" chunk count %"PRIu64"\n", i, nv_cache->partition_chunk_count[i]);
+	}
 	FTL_NOTICELOG(dev, "NV cache usable(data) chunks %lu\n", usable_chunks);
 
 	TAILQ_INIT(&nv_cache->compactor_list);
@@ -785,7 +806,16 @@ compaction_process_rewrite_cb(struct spdk_bdev_io *bdev_io, bool success, void *
 	struct spdk_ftl_dev *dev = rq->dev;
 	struct ftl_nv_cache_compactor *compactor = rq->owner.priv;
 
+	struct ftl_nv_cache_chunk *chunk;
+
+	chunk = rq->rewriten_chunk;
+	assert(chunk != NULL);
+
 	ftl_stats_bdev_io_completed(dev, FTL_STATS_TYPE_CMP, bdev_io);
+	dev->stats.partition_cmp_entries[chunk->partition_idx].write.interval_blocks += bdev_io->u.bdev.num_blocks;
+	dev->stats.partition_cmp_entries[chunk->partition_idx].write.blocks += bdev_io->u.bdev.num_blocks;
+	dev->stats.partition_cmp_entries[chunk->partition_idx].write.interval_ios++;
+	dev->stats.partition_cmp_entries[chunk->partition_idx].write.ios++;
 
 	assert(rq->iter.remaining >= bdev_io->u.bdev.num_blocks);
 	rq->iter.remaining -= bdev_io->u.bdev.num_blocks;;

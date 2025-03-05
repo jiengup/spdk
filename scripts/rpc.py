@@ -2311,6 +2311,7 @@ Format: 'user:u1 secret:s1 muser:mu1 msecret:ms1,user:u2 secret:s2 muser:mu2 mse
                                             overprovisioning=args.overprovisioning,
                                             algo=args.algo,
                                             group_num=args.group_num,
+                                            partition_num = args.partition_num,
                                             l2p_dram_limit=args.l2p_dram_limit,
                                             core_mask=args.core_mask,
                                             fast_shutdown=args.fast_shutdown))
@@ -2325,7 +2326,8 @@ Format: 'user:u1 secret:s1 muser:mu1 msecret:ms1,user:u2 secret:s2 muser:mu2 mse
                    ' to user (optional); default 20', type=int)
     p.add_argument('--algo', help='Name of the operation set of nv cache device', type=str,
             required=True)
-    p.add_argument('--group_num', help='Num of traffic groups.(optional); default 1', type=int)
+    p.add_argument('--group-num', help='Num of traffic groups.(optional); default 1', type=int)
+    p.add_argument('--partition-num', help="Number of partitions to create (optional); default 1", type=int)
     p.add_argument('--l2p-dram-limit', help='l2p size that could reside in DRAM (optional); default 2048',
                    type=int)
     p.add_argument('--core-mask', help='CPU core mask - which cores will be used for ftl core thread, '
@@ -2342,6 +2344,7 @@ Format: 'user:u1 secret:s1 muser:mu1 msecret:ms1,user:u2 secret:s2 muser:mu2 mse
                                           overprovisioning=args.overprovisioning,
                                           algo=args.algo,
                                           group_num=args.group_num,
+                                          partition_num = args.partition_num,
                                           l2p_dram_limit=args.l2p_dram_limit,
                                           core_mask=args.core_mask,
                                           fast_shutdown=args.fast_shutdown))
@@ -2357,7 +2360,8 @@ Format: 'user:u1 secret:s1 muser:mu1 msecret:ms1,user:u2 secret:s2 muser:mu2 mse
                    ' to user (optional); default 20', type=int)
     p.add_argument('--algo', help='Name of the operation set of nv cache device', type=str,
             required=True)
-    p.add_argument('--group_num', help='Num of traffic groups.(optional); default 1', type=int)
+    p.add_argument('--group-num', help='Num of traffic groups.(optional); default 1', type=int)
+    p.add_argument('--partition-num', help="Number of partitions to create (optional); default 1", type=int)
     p.add_argument('--l2p-dram-limit', help='l2p size that could reside in DRAM (optional); default 2048',
                    type=int)
     p.add_argument('--core-mask', help='CPU core mask - which cores will be used for ftl core thread, '
