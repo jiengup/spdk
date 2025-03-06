@@ -47,11 +47,11 @@ test/common/build_config.sh
 exp/job/*/*.job
 exp/result/*
 exp/plot/*/
-exp-0219/jobs/*.job
-exp-0219/configs/*.json
+exp-0219/jobs/template*
+exp-0219/configs/template*
 exp-0219/plot/result
-exp-0219/result2
-exp-0219/result/*
+exp-0219/results/template*
+exp-0219/scripts/template*
 compile_commands.json
 .cache
 *core*

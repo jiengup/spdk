@@ -319,7 +319,8 @@ ftl_nv_cache_init(struct spdk_ftl_dev *dev)
 	for (i=0; i<nv_cache->partition_num; i++) {
 		nv_cache->partition_chunk_count[i] = 0;
 	}
-	for (i=0; i < usable_chunks; i++, chunk++) {
+	for (i=nv_cache->chunk_inactive_count; i < nv_cache->chunk_count; i++) {
+		chunk = &nv_cache->chunks[i];
 		chunk->partition_idx = current_partition;
 		nv_cache->partition_chunk_count[chunk->partition_idx] ++;
 		if ((i + 1) % chunks_per_partition == 0) {

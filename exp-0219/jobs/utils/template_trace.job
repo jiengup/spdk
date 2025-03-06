@@ -9,4 +9,3 @@ log_flags=bdev
 
 [cbs-trace]
 read_iolog=/home/xgj/tencent_dataset/dataset_0220.trace
-read_iolog_chunked=1
