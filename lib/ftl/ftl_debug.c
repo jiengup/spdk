@@ -231,6 +231,7 @@ ftl_dev_dump_stats(const struct spdk_ftl_dev *dev)
 		write_user = dev->stats.partition_user_entries[i].write.blocks;
 		write_comp = dev->stats.partition_cmp_entries[i].write.blocks;
 		write_total = write_user + write_comp;
+		waf = (double)write_total / (double)write_user;
 		FTL_NOTICELOG(dev, "PARTITION:           %"PRIu64"\n", i);
 		FTL_NOTICELOG(dev, "user writes:         %"PRIu64"\n", write_user);
 		FTL_NOTICELOG(dev, "compaction writes:   %"PRIu64"\n", write_comp);

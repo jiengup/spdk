@@ -768,6 +768,7 @@ static void
 spdk_fio_cleanup(struct thread_data *td)
 {
 	struct spdk_fio_thread *fio_thread = td->io_ops_data;
+	while (spdk_fio_poll_thread(fio_thread) > 0) {};
 
 	spdk_fio_cleanup_thread(fio_thread);
 	td->io_ops_data = NULL;
@@ -838,6 +839,11 @@ spdk_fio_completion_cb(struct spdk_bdev_io *bdev_io,
 	struct spdk_fio_request		*fio_req = cb_arg;
 	struct thread_data		*td = fio_req->td;
 	struct spdk_fio_thread		*fio_thread = td->io_ops_data;
+
+	if (fio_thread->iocq_count >= fio_thread->iocq_size) {
+		spdk_bdev_free_io(bdev_io);
+		return;
+	}
 
 	assert(fio_thread->iocq_count < fio_thread->iocq_size);
 	fio_req->io->error = success ? 0 : EIO;

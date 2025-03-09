@@ -108,7 +108,7 @@
           "method": "bdev_split_create",
           "params": {
             "base_bdev": "nvme0n1",
-            "split_count": 4,
+            "split_count": 8,
             "split_size_mb": 131072
           }
         },
@@ -195,7 +195,6 @@
             "group_num": 1,
             "partition_num": 1,
             "algo": "single_group_cb",
-            "uuid": "98e118a6-f927-4689-adf1-d23e20ea889c",
             "fast_shutdown": false,
             "cache": "nvme0n1p0"
           }
@@ -209,9 +208,8 @@
             "group_num": 1,
             "partition_num": 1,
             "algo": "single_group_cb",
-            "uuid": "43e7f24d-62a9-4bef-a925-052293c8e742",
             "fast_shutdown": false,
-            "cache": "nvme0n1p1"
+            "cache": "nvme0n1p2"
           }
         },
         {
@@ -223,9 +221,8 @@
             "group_num": 1,
             "partition_num": 1,
             "algo": "single_group_cb",
-            "uuid": "5e0b7cfb-96bd-40e5-89eb-7ab13e40e2c0",
             "fast_shutdown": false,
-            "cache": "nvme0n1p2"
+            "cache": "nvme0n1p4"
           }
         },
         {
@@ -237,9 +234,8 @@
             "group_num": 1,
             "partition_num": 1,
             "algo": "single_group_cb",
-            "uuid": "a92734ca-0b67-4a5d-af16-7c0d1d7d4e87",
             "fast_shutdown": false,
-            "cache": "nvme0n1p3"
+            "cache": "nvme0n1p6"
           }
         },
         {

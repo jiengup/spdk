@@ -109,7 +109,15 @@
           "params": {
             "base_bdev": "nvme0n1",
             "split_count": 1,
-            "split_size_mb": 573440
+            "split_size_mb": 524288
+          }
+        },
+        {
+          "method": "bdev_split_create",
+          "params": {
+            "base_bdev": "ftl0",
+            "split_count": 4,
+            "split_size_mb": 0
           }
         },
         {
@@ -174,7 +182,7 @@
             "ctrlr_loss_timeout_sec": 0,
             "reconnect_delay_sec": 0,
             "fast_io_fail_timeout_sec": 0,
-            "hostnqn": "nqn.2014-08.org.nvmexpress:uuid:de506ed3-76de-4f96-98b3-44eb43e0178e",
+            "hostnqn": "nqn.2014-08.org.nvmexpress:uuid:c9a0b223-78ac-4a22-8cad-d2577585db54",
             "hdgst": false,
             "ddgst": false
           }
@@ -192,9 +200,9 @@
             "name": "ftl0",
             "overprovisioning": 14,
             "l2p_dram_limit": 2048,
-            "group_num": 1,
-            "partition_num": 4,
-            "algo": "single_group_cb",
+            "group_num": 6,
+            "partition_num": 1,
+            "algo": "sepbit24_cb",
             "fast_shutdown": false,
             "cache": "nvme0n1p0"
           }

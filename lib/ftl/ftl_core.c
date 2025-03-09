@@ -820,6 +820,24 @@ ftl_show_stat(struct spdk_ftl_dev *dev)
 	uint64_t total_write_blocks = user_write_blocks + cmp_write_blocks;
 	FTL_NOTICELOG(dev, "[STAT_WAF] %.4lf\n", (double)total_write_blocks / user_write_blocks);
 
+	for (size_t i = 0; i<dev->conf.partition_num; i++) {
+		uint64_t user_write_ios = dev->stats.partition_user_entries[i].write.interval_ios;
+		uint64_t user_write_blocks = dev->stats.partition_user_entries[i].write.interval_blocks;
+		uint64_t user_read_ios = dev->stats.partition_user_entries[i].read.interval_ios;
+		uint64_t user_read_blocks = dev->stats.partition_user_entries[i].read.interval_blocks;
+		uint64_t cmp_write_ios = dev->stats.partition_cmp_entries[i].write.interval_ios;
+		uint64_t cmp_write_blocks = dev->stats.partition_cmp_entries[i].write.interval_blocks;
+		uint64_t cmp_read_ios = dev->stats.partition_cmp_entries[i].read.interval_ios;
+		uint64_t cmp_read_blocks = dev->stats.partition_cmp_entries[i].read.interval_blocks;
+		uint64_t total_write_blocks = user_write_blocks + cmp_write_blocks;
+		FTL_NOTICELOG(dev, "PARTITION:           %"PRIu64"\n", i);
+		FTL_NOTICELOG(dev, "[STAT_USER] read: IOPS %"PRIu64", blocks %"PRIu64", write: IOPS %"PRIu64", blocks %"PRIu64"\n",
+			user_read_ios, user_read_blocks, user_write_ios, user_write_blocks);
+		FTL_NOTICELOG(dev, "[STAT_COMPACTION] read: IOPS %"PRIu64", blocks %"PRIu64", write: IOPS %"PRIu64", blocks %"PRIu64"\n",
+					cmp_read_ios, cmp_read_blocks, cmp_write_ios, cmp_write_blocks);
+		FTL_NOTICELOG(dev, "[STAT_WAF] %.4lf\n", (double)total_write_blocks / user_write_blocks);
+	}
+
 	FTL_NOTICELOG(dev, "Inactivate chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_inactive_count);
 	FTL_NOTICELOG(dev, "Full chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_full_count);
 	FTL_NOTICELOG(dev, "Free chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_free_count);
@@ -829,7 +847,7 @@ ftl_show_stat(struct spdk_ftl_dev *dev)
 	FTL_NOTICELOG(dev, "Compactor active cnt: %"PRIu64"\n", dev->nv_cache.compaction_active_count);
 	FTL_NOTICELOG(dev, "Free persist chunk cnt: %"PRIu64"\n", dev->nv_cache.chunk_free_persist_count);
 
-	ftl_dev_dump_stats(dev);
+	// ftl_dev_dump_stats(dev);
 
 	for (size_t i = 0; i < FTL_STATS_TYPE_MAX; i++) {
 		dev->stats.entries[i].read.interval_ios = 0;

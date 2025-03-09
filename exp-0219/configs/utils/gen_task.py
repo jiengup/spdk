@@ -20,8 +20,13 @@ parser.add_argument(
     "-o", "--op", type=int, nargs="+", help="ftl overprovisioning to use", required=True
 )
 parser.add_argument(
-    "-i", "--read_iolog", type=str, help="trace file for fio replay"
+    "-i", "--read_iolog", type=str, nargs="+", help="trace file for fio replay"
 )
+
+parser.add_argument(
+    "-n", "--bdev_num", type=int, help="number of bdevs to run"
+)
+
 args = parser.parse_args()
 
 EXP_DIR = f"{args.template.split('.json')[0]}_{TIME}"
@@ -33,6 +38,7 @@ TEMPLATE_FILE = f"{HOME_DIR}/spdk/exp-0219/configs/utils/{args.template}"
 FIO_SPDK_BDEV_ENGINE = f"{HOME_DIR}/spdk/build/fio/spdk_bdev"
 FIO_JOB_TEMPLATE_FILE = f"{HOME_DIR}/spdk/exp-0219/jobs/utils/template.job"
 FIO_TRACE_JOB_TEMPLATE_FILE = f"{HOME_DIR}/spdk/exp-0219/jobs/utils/template_trace.job"
+FIO_MULTI_TRACE_JOB_TEMPLATE_FILE = f"{HOME_DIR}/spdk/exp-0219/jobs/utils/template_multi_trace.job"
 FIO_JOB_OUT_DIR = f"{HOME_DIR}/spdk/exp-0219/jobs/{EXP_DIR}"
 
 SCRIPT_DIR = f"{HOME_DIR}/spdk/exp-0219/scripts"
@@ -145,24 +151,40 @@ result_files = []
 
 for (spdk_config_file, param) in spdk_config_files:
     config = configparser.ConfigParser()
-    if args.read_iolog:
-        read_iolog = os.path.expanduser(args.read_iolog)
-        job_template_file = FIO_TRACE_JOB_TEMPLATE_FILE
+    if args.bdev_num:
+        if (args.bdev_num != len(args.read_iolog)):
+            raise ValueError("Number of bdevs and iologs do not match")
+        
+        job_template_file = FIO_MULTI_TRACE_JOB_TEMPLATE_FILE
         config.read(job_template_file)
-
         config.set("global", "spdk_json_conf", spdk_config_file)
         config.set("global", "ioengine", FIO_SPDK_BDEV_ENGINE)
-        config.set("cbs-trace", "read_iolog", read_iolog)
 
-        job_file = f"{FIO_JOB_OUT_DIR}/TRACE_{param}.job"
+        for i, iolog in enumerate(args.read_iolog):
+            config.set(f"trace{i}", f"read_iolog", iolog)
+
+        job_file = f"{FIO_JOB_OUT_DIR}/MULTI_TRACE_{param}.job"
+
     else:
-        job_template_file = FIO_JOB_TEMPLATE_FILE
-        config.read(job_template_file)
+        if args.read_iolog:
+            assert(len(args.read_iolog) == 1)
+            read_iolog = os.path.expanduser(args.read_iolog[0])
+            job_template_file = FIO_TRACE_JOB_TEMPLATE_FILE
+            config.read(job_template_file)
 
-        config.set("global", "spdk_json_conf", spdk_config_file)
-        config.set("global", "ioengine", FIO_SPDK_BDEV_ENGINE)
+            config.set("global", "spdk_json_conf", spdk_config_file)
+            config.set("global", "ioengine", FIO_SPDK_BDEV_ENGINE)
+            config.set("cbs-trace", "read_iolog", read_iolog)
 
-        job_file = f"{FIO_JOB_OUT_DIR}/{param}.job"
+            job_file = f"{FIO_JOB_OUT_DIR}/TRACE_{param}.job"
+        else:
+            job_template_file = FIO_JOB_TEMPLATE_FILE
+            config.read(job_template_file)
+
+            config.set("global", "spdk_json_conf", spdk_config_file)
+            config.set("global", "ioengine", FIO_SPDK_BDEV_ENGINE)
+
+            job_file = f"{FIO_JOB_OUT_DIR}/{param}.job"
 
     with open(job_file, "w") as configf:
         config.write(configf)
